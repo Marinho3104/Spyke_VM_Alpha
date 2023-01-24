@@ -1,0 +1,136 @@
+
+
+#define END_CODE 0 // End of code
+#define END_INSTRUCTION 1 // ;
+
+
+#define OPEN_PARENTHESIS 2 // (
+#define CLOSE_PARENTHESIS 3 // )
+
+
+#define OPEN_BRACES 4 // {
+#define CLOSE_BRACES 5 // }
+
+
+#define OPEN_BRACKET 6 // [
+#define CLOSE_BRACKET 7 // ]
+
+
+#define COMMA 8 // ,
+#define COLON 9 // :
+#define DOUBLE_COLON 10 // ::
+#define QUESTION_MARK 11 // ?
+#define QUOTATION_MARK 12 // "
+#define SINGLE_QUOTATION_MARK 13 // '
+#define COMMENT_SINGLE_LINE 14 // //
+#define COMMENT 15 // /*
+#define COMMENT_END 16 // */
+#define PRE_PROCESSOR 17 // #
+
+
+#define POINTER 18 // * 
+#define ADDRESS 19 // &
+
+
+#define FUNCTION_OPERATOR_PLUS 20  // +
+#define FUNCTION_OPERATOR_MINUS 21 // -
+#define FUNCTION_OPERATOR_MULTIPLICATION 22 // *
+#define FUNCTION_OPERATOR_DIVISION 23 // /
+#define FUNCTION_OPERATOR_MODULOS 24 // %
+
+#define FUNCTION_OPERATOR_EQUAL 25 // =
+#define FUNCTION_OPERATOR_PLUS_ASSIGN 26 // +=
+#define FUNCTION_OPERATOR_MINUS_ASSIGN 27 // -=
+#define FUNCTION_OPERATOR_MULTIPLICATION_ASSIGN 28 // *=
+#define FUNCTION_OPERATOR_DIVISION_ASSIGN 29 // /=
+#define FUNCTION_OPERATOR_MODULOS_ASSIGN 30 // %=
+
+
+#define FUNCTION_OPERATOR_INCREMENT 31 // ++
+#define FUNCTION_OPERATOR_DECREMENT 32 // --
+
+
+#define FUNCTION_OPERATOR_INCREMENT_LEFT 33 // ++
+#define FUNCTION_OPERATOR_DECREMENT_LEFT 34 // --
+
+
+#define FUNCTION_OPERATOR_BRACKET 35 // []
+
+
+#define FUNCTION_OPERATOR_AND 36 // &&
+#define FUNCTION_OPERATOR_OR 37 // ||
+#define FUNCTION_OPERATOR_NOT 38 // !
+
+
+#define FUNCTION_OPERATOR_EQUAL_TO 39 // ==
+#define FUNCTION_OPERATOR_NOT_EQUAL_TO 40 // !=
+#define FUNCTION_OPERATOR_GREATER_THAN 41 // >
+#define FUNCTION_OPERATOR_LESS_THAN 42 // <
+#define FUNCTION_OPERATOR_GREATER_THAN_EQUAL_TO 43 // >=
+#define FUNCTION_OPERATOR_LESS_THAN_EQUAL_TO 44 // <= 
+
+
+#define FUNCTION_OPERATOR_BITWISE_AND 45 // &
+#define FUNCTION_OPERATOR_BITWISE_OR 46 // |
+#define FUNCTION_OPERATOR_BITWISE_XOR 47 // ^
+#define FUNCTION_OPERATOR_BITWISE_NOT 48 // ~
+#define FUNCTION_OPERATOR_BITWISE_LEFT_SHIFT 49 // <<
+#define FUNCTION_OPERATOR_BITWISE_RIGHT_SHIFT 50 // >>
+
+
+#define FUNCTION_OPERATOR_BITWISE_AND_ASSIGN 51 // &=
+#define FUNCTION_OPERATOR_BITWISE_OR_ASSIGN 52 // |=
+#define FUNCTION_OPERATOR_BITWISE_XOR_ASSIGN 53 // ^=
+#define FUNCTION_OPERATOR_BITWISE_LEFT_SHIFT_ASSIGN 54 // <<=
+#define FUNCTION_OPERATOR_BITWISE_RIGHT_SHIFT_ASSIGN 55 // >>=
+
+
+#define BINARY_ADDITION 56 // b+
+#define BINARY_SUBTRACTION 57 // b-
+#define BINARY_MULTIPLICATION 58 // b*
+#define BINARY_DIVISION 59 // b/
+#define BINARY_MODULOS 60 // b%
+
+
+#define PRIMITIVE_TYPE_VOID 61 // void
+#define PRIMITIVE_TYPE_BYTE 62 // byte
+#define PRIMITIVE_TYPE_INT 63 // int
+#define PRIMITIVE_TYPE_BOOL 64 // bool
+#define PRIMITIVE_TYPE_SPYKE 65 // spyke
+#define PRIMITIVE_TYPE_POINTER 66 // pointer
+
+#define IDENTIFIER 67 //
+
+#define IMPLICIT_VALUE_INT 68
+#define IMPLICIT_VALUE_CHARACTER 69
+#define IMPLICIT_VALUE_STRING 70
+
+#define NAMESPACE 71 // namepsace
+#define STRUCT 72 // struct
+#define CONTRACT 73 // contract
+#define STATIC 74 // static 
+
+#define ACCESSING 75 // .
+#define ACCESSING_POINTER 76 // ->
+
+#define BYTE_CODE 77 // byte code
+
+#define RETURN 78 // return
+
+#define IF 79 // if
+#define ELSE_IF 80 // else if
+#define ELSE 81 // else
+#define WHILE 82 // while
+#define DO 83 // do
+#define BREAK 84 // break
+#define CONTINUE 85 // continue
+
+#define SIZE_OF 86 // sizeof
+
+#define PRE_COMPILER_DEFINE 87 // #define
+#define PRE_COMPILER_INCLUDE 88 // #include
+#define PRE_COMPILER_IF_DEF 89 // #ifdef
+#define PRE_COMPILER_IF_N_DEF 90 // #ifndef 
+#define PRE_COMPILER_ELSE 91 // #else
+#define PRE_COMPILER_END_IF 92 // #endif
+
