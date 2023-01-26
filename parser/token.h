@@ -21,9 +21,11 @@ namespace parser {
         char* identifier;
         Position_Information position_information;
 
-        ~Token(); Token(int, char*, size_t, size_t, size_t);
+        ~Token(); Token(int, char*, size_t, size_t, size_t); Token(int, char*, Position_Information);
 
         void print();
+
+        Token* get_copy();
 
     };
 

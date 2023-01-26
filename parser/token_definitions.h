@@ -25,7 +25,7 @@
 #define COMMENT_SINGLE_LINE 14 // //
 #define COMMENT 15 // /*
 #define COMMENT_END 16 // */
-#define PRE_PROCESSOR 17 // #
+#define PRE_COMPILER 17 // #
 
 
 #define POINTER 18 // * 
@@ -113,7 +113,7 @@
 #define ACCESSING 75 // .
 #define ACCESSING_POINTER 76 // ->
 
-#define BYTE_CODE 77 // byte code
+#define EXEC 77 // exec
 
 #define RETURN 78 // return
 

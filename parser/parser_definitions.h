@@ -13,6 +13,17 @@ namespace utils {
 /* Parser */
 namespace parser {
 
+    // Code Informaiton
+    struct Code_Information; 
+
+    // Tokenizer
+    struct Tokenizer;
+
+    // Pre Compiler
+    struct Pre_Compiler;
+
+    struct Pre_Compiler_Define_Instruction;
+
     struct Token;
 
 }

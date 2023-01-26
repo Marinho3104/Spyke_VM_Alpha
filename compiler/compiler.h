@@ -14,6 +14,8 @@ namespace compiler {
         char* code;
 
         /* Parser Proccesses */
+        parser::Code_Information* code_information;
+        parser::Pre_Compiler* pre_compiler;
         parser::Tokenizer* tokenizer;
 
         ~Compiler(); Compiler(const char*, int);

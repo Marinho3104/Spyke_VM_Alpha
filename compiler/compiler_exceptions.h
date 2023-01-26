@@ -12,13 +12,9 @@ namespace compiler {
 
         const char* information;
 
-        Ordinary_Exception(const char* __info) : information(__info) {}
+        Ordinary_Exception(const char* __info);
 
-        const char* what() const throw() {
-
-            return information;
-
-        }
+        const char* what() const throw();
 
     };
 

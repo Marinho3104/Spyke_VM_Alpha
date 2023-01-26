@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string.h>
 
+#include "pre_compiler_helper.h" 
 #include "token.h"
 
 template <typename type>
@@ -198,6 +199,7 @@ int utils::Linked_List <char*>::getPosition(char* _to_compare, bool (*func) (cha
 
 }
 
+template class utils::Linked_List <parser::Pre_Compiler_Define_Instruction*>;
 template class utils::Linked_List <parser::Token*>;
 template class utils::Linked_List <char*>;
 template class utils::Linked_List <int>;

@@ -6,12 +6,34 @@
 
 char* utils::get_string_copy(char* __to_copy) {
 
+    if (!__to_copy) return 0;
+
     char* __new = (char*) malloc(strlen(__to_copy) + 1);
 
     strcpy(
         __new,
         __to_copy
     );
+
+    return __new;
+
+}
+
+char* utils::get_string_copy_n(char* __to_copy, size_t __size) {
+
+    if (!__to_copy) return 0;
+
+    char* __new = (char*) malloc(__size + 1);
+
+    __new[__size] = '\0';
+
+    if (__size)
+    
+        strncpy(
+            __new,
+            __to_copy,
+            __size
+        );
 
     return __new;
 
