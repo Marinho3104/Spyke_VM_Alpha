@@ -4,6 +4,8 @@
 #include <string.h>
 
 #include "pre_compiler_helper.h" 
+#include "ast_helper.h"
+#include "ast_nodes.h"
 #include "token.h"
 
 template <typename type>
@@ -200,10 +202,15 @@ int utils::Linked_List <char*>::getPosition(char* _to_compare, bool (*func) (cha
 }
 
 template class utils::Linked_List <parser::Pre_Compiler_Define_Instruction*>;
+template class utils::Linked_List <parser::Name_Space*>;
+template class utils::Linked_List <parser::Ast_Node*>;
 template class utils::Linked_List <parser::Token*>;
 template class utils::Linked_List <char*>;
 template class utils::Linked_List <int>;
 
+template class utils::Data_Linked_List <parser::Pre_Compiler_Define_Instruction*>;
+template class utils::Data_Linked_List <parser::Name_Space*>;
+template class utils::Data_Linked_List <parser::Ast_Node*>;
 template class utils::Data_Linked_List <parser::Token*>;
 template class utils::Data_Linked_List <char*>;
 template class utils::Data_Linked_List <int>;

@@ -15,22 +15,23 @@ const char* parser::Ordinary_Exception_Pre_Compiler::what() const throw() { retu
 parser::Unknow_Instruction_Pre_Compiler::Unknow_Instruction_Pre_Compiler(Code_Information* __code_information, Token* __token) {
 
     char* _inicial_line = 
-            __code_information->get_line(__token->position_information.line);
+        __code_information->get_line(__token->position_information.line);
 
-        char* _error_sign = 
-            __code_information->get_line_error_sign(__token->position_information.line, __token->position_information.column, __token->position_information.size);
+    char* _error_sign = 
+        __code_information->get_line_error_sign(__token->position_information.line, __token->position_information.column, __token->position_information.size);
 
-        asprintf(
-            &information,
-            "\n\n" \
-            "\tUnknow Instruction:\n\n" \
-            "\t\t%s\n" \
-            "\t\t%s\n",
-            _inicial_line,
-            _error_sign
-        ); 
+    asprintf(
+        &information,
+        "\n\n" \
+        "\tUnknow Instruction:(id: %i)\n\n" \
+        "\t\t%s\n" \
+        "\t\t%s\n",
+        __token->id,
+        _inicial_line,
+        _error_sign
+    ); 
 
-        free(_inicial_line); free(_error_sign);
+    free(_inicial_line); free(_error_sign);
 
 }
 
@@ -72,7 +73,7 @@ parser::Few_Arguments_Pre_Compiler::Few_Arguments_Pre_Compiler(Code_Information*
 const char* parser::Few_Arguments_Pre_Compiler::what() const throw() { return (const char*) information; }
 
 
-parser::Expected_Identifier_Pre_Compiler::Expected_Identifier_Pre_Compiler(Code_Information* __code_information, int __line, int __column) {
+parser::Expected_Token_Pre_Compiler::Expected_Token_Pre_Compiler(Code_Information* __code_information, int __token_id, int __line, int __column) {
 
     char* _code_line = 
         __code_information->get_line(__line);
@@ -87,9 +88,10 @@ parser::Expected_Identifier_Pre_Compiler::Expected_Identifier_Pre_Compiler(Code_
     asprintf(
         &information,
         "\n\n" \
-        "\tExpected Token Identifier:\n\n" \
+        "\tExpected Token (id: %i):\n\n" \
         "\t\t%s\n" \
         "\t\t%s\n",
+        __token_id,
         _code_line,
         _error_sign
     ); 
@@ -99,5 +101,68 @@ parser::Expected_Identifier_Pre_Compiler::Expected_Identifier_Pre_Compiler(Code_
 
 }
 
-const char* parser::Expected_Identifier_Pre_Compiler::what() const throw() { return (const char*) information; }
+const char* parser::Expected_Token_Pre_Compiler::what() const throw() { return (const char*) information; }
+
+
+parser::Unknow_Include_Path_Pre_Compiler::Unknow_Include_Path_Pre_Compiler(Code_Information* __code_information, int __instruction_id, int __line, int __column) {
+
+    char* _code_line = 
+        __code_information->get_line(__line);
+
+    char* _error_sign = 
+        __code_information->get_line_error_sign(
+            __line, 
+            __column, 
+            strlen(
+                __code_information->code_by_lines->operator[](
+                    __line
+                )
+            ) - __column
+        );
+
+    asprintf(
+        &information,
+        "\n\n" \
+        "\tUnknow Path given Pre Compiler Include (id: %i):\n\n" \
+        "\t\t%s\n" \
+        "\t\t%s\n",
+        __instruction_id, 
+        _code_line,
+        _error_sign
+    ); 
+
+    free(_code_line);
+    free(_error_sign); 
+
+}
+
+const char* parser::Unknow_Include_Path_Pre_Compiler::what() const throw() { return (const char*) information; }
+
+
+parser::Unexpected_Instruction_Pre_Compiler::Unexpected_Instruction_Pre_Compiler(Code_Information* __code_information, Token* __token) {
+
+    char* _inicial_line = 
+        __code_information->get_line(__token->position_information.line);
+
+    char* _error_sign = 
+        __code_information->get_line_error_sign(__token->position_information.line, __token->position_information.column, __token->position_information.size);
+
+    asprintf(
+        &information,
+        "\n\n" \
+        "\tUnexpected Instruction:\n\n" \
+        "\t\t%s\n" \
+        "\t\t%s\n",
+        _inicial_line,
+        _error_sign
+    ); 
+
+    free(_inicial_line); free(_error_sign);
+
+}
+
+const char* parser::Unexpected_Instruction_Pre_Compiler::what() const throw() { return (const char*) information; }
+
+
+
 

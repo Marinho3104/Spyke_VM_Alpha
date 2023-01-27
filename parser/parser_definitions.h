@@ -24,6 +24,16 @@ namespace parser {
 
     struct Pre_Compiler_Define_Instruction;
 
+    // Ast
+    struct Ast;
+
+    struct Name_Space_Control;
+    struct Name_Space;
+
+    struct Ast_Node;
+    struct Ast_Node_Name_Space;
+
+
     struct Token;
 
 }

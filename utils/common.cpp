@@ -39,7 +39,21 @@ char* utils::get_string_copy_n(char* __to_copy, size_t __size) {
 
 }
 
+bool utils::file_exists(char* __path) {
+
+    FILE *_file = fopen(__path, "r");
+
+    bool _exists = _file;
+
+    if (_exists) fclose(_file);
+
+    return _exists;
+
+}
+
 char* utils::get_file_content(char* __path) {
+
+    if (!file_exists(__path)) return 0;
 
     std::ifstream ifs(__path);
     std::string content( (std::istreambuf_iterator<char>(ifs) ),

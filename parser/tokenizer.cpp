@@ -108,7 +108,9 @@ bool parser::Tokenizer::handle_token_keyword() {
 
     char* _previous_state = code;
 
-    int _token_id = get_token_keyword_id( (const char*&)  code, tokens_collection->last->object->id );
+    int _last_id = tokens_collection->last ? tokens_collection->last->object->id : -1;
+
+    int _token_id = get_token_keyword_id( (const char*&)  code, _last_id );
 
     if (_token_id == -1) return 0;
 
@@ -204,7 +206,17 @@ void parser::Tokenizer::handle_token_identifier() {
 }
 
 
-void parser::Tokenizer::handle_comment_single_line() { while (*(++code) != '\n');  }
+void parser::Tokenizer::handle_comment_single_line() { 
+    
+    while(1) {
+
+        if (!*code || *code == '\n') break;
+       
+        ++code;
+
+    }
+    
+}
 
 void parser::Tokenizer::handle_comment() {
 

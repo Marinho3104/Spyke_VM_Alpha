@@ -9,6 +9,7 @@ namespace parser {
     struct Code_Information;
     struct Pre_Compiler;
     struct Tokenizer;
+    struct Ast;
 
 }
 

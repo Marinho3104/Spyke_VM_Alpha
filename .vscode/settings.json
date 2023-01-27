@@ -62,6 +62,13 @@
         "typeinfo": "cpp",
         "__nullptr": "cpp",
         "__locale": "cpp",
-        "locale": "cpp"
+        "locale": "cpp",
+        "__bit_reference": "cpp",
+        "__debug": "cpp",
+        "__functional_03": "cpp",
+        "__functional_base": "cpp",
+        "__mutex_base": "cpp",
+        "__threading_support": "cpp",
+        "ios": "cpp"
     }
 }

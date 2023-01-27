@@ -41,11 +41,31 @@ namespace parser {
 
     };
 
-    struct Expected_Identifier_Pre_Compiler : public std::exception {
+    struct Expected_Token_Pre_Compiler : public std::exception {
 
         char* information;
 
-        Expected_Identifier_Pre_Compiler(Code_Information*, int, int);
+        Expected_Token_Pre_Compiler(Code_Information*, int, int, int);
+
+        const char* what() const throw();
+
+    };
+
+    struct Unknow_Include_Path_Pre_Compiler : public std::exception {
+
+        char* information;
+
+        Unknow_Include_Path_Pre_Compiler(Code_Information*, int, int, int);
+
+        const char* what() const throw();
+
+    };
+
+    struct Unexpected_Instruction_Pre_Compiler : public std::exception {
+
+        char* information;
+
+        Unexpected_Instruction_Pre_Compiler(Code_Information*, Token*);
 
         const char* what() const throw();
 
