@@ -1,0 +1,24 @@
+
+
+/* Primitives types size */
+
+#define PRIMITIVE_TYPE_VOID_SIZE 0
+#define PRIMITIVE_TYPE_BYTE_SIZE 1
+#define PRIMITIVE_TYPE_INT_SIZE 4
+#define PRIMITIVE_TYPE_BOOL_SIZE 1
+#define PRIMITIVE_TYPE_SPYKE_SIZE 0
+#define PRIMITIVE_TYPE_POINTER_SIZE 2
+
+
+/* Primitive Struct Name */
+
+#define PRIMITIVE_TYPE_VOID_NAME "Void"
+#define PRIMITIVE_TYPE_BYTE_NAME "Byte"
+#define PRIMITIVE_TYPE_INT_NAME "Int"
+#define PRIMITIVE_TYPE_BOOL_NAME "Bool"
+#define PRIMITIVE_TYPE_SPYKE_NAME "Spyke"
+#define PRIMITIVE_TYPE_POINTER_NAME "Pointer"
+
+
+
+

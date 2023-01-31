@@ -23,7 +23,7 @@ parser::Unknow_Instruction_Pre_Compiler::Unknow_Instruction_Pre_Compiler(Code_In
     asprintf(
         &information,
         "\n\n" \
-        "\tUnknow Instruction:(id: %i)\n\n" \
+        "\tUnknow Instruction: (id: %i)\n\n" \
         "\t\t%s\n" \
         "\t\t%s\n",
         __token->id,

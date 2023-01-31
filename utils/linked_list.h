@@ -38,8 +38,8 @@ namespace utils {
         bool destroy_content;
         int count;
 
-        ~Linked_List(); Linked_List();
-
+        ~Linked_List(); Linked_List(); Linked_List(bool);
+ 
         bool operator==(Linked_List <type>*);
 
         bool operator!=(Linked_List <type>*);

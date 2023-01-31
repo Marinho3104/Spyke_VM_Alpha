@@ -29,6 +29,8 @@ namespace parser {
 
     };
 
+    bool is_primitive_type(int);
+
 }
 
 #endif

@@ -7,6 +7,7 @@
 namespace utils {
 
     template <typename> struct Linked_List;
+    template <typename> struct Data_Linked_List;
 
 }
 
@@ -18,6 +19,8 @@ namespace parser {
 
     // Tokenizer
     struct Tokenizer;
+
+    struct Token;
 
     // Pre Compiler
     struct Pre_Compiler;
@@ -32,9 +35,13 @@ namespace parser {
 
     struct Ast_Node;
     struct Ast_Node_Name_Space;
+    struct Ast_Node_Struct_Declaration;
+    struct Ast_Node_Variable_Declaration;
+    struct Ast_Node_Function_Declaration;
 
+    // Ast Helper
+    struct Type_Information;
 
-    struct Token;
 
 }
 

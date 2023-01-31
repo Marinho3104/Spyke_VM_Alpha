@@ -1,5 +1,6 @@
 #include "token.h"
 
+#include "token_definitions.h"
 #include "common.h"
 
 #include <iostream>
@@ -38,3 +39,6 @@ parser::Token* parser::Token::get_copy() {
     return _token;
 
 }
+
+
+bool parser::is_primitive_type(int __token_id) { return __token_id >= PRIMITIVE_TYPE_VOID && __token_id <= PRIMITIVE_TYPE_POINTER; }

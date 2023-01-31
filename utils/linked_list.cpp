@@ -35,6 +35,10 @@ template <typename type>
 utils::Linked_List <type>::Linked_List() : first(NULL), last(NULL), count(0), destroy_content(1) {}
 
 template <typename type>
+utils::Linked_List <type>::Linked_List(bool __destroy_content) : first(NULL), last(NULL), count(0), destroy_content(__destroy_content) {}
+
+
+template <typename type>
 utils::Data_Linked_List <type>* utils::Linked_List <type>::getDataLinkedList(int __index) {
 
     if (__index < 0 || !count) return NULL; utils::Data_Linked_List <type>* _data_ll = first;
@@ -201,7 +205,11 @@ int utils::Linked_List <char*>::getPosition(char* _to_compare, bool (*func) (cha
 
 }
 
+
 template class utils::Linked_List <parser::Pre_Compiler_Define_Instruction*>;
+template class utils::Linked_List <parser::Ast_Node_Function_Declaration*>;
+template class utils::Linked_List <parser::Ast_Node_Variable_Declaration*>;
+template class utils::Linked_List <parser::Ast_Node_Struct_Declaration*>;
 template class utils::Linked_List <parser::Name_Space*>;
 template class utils::Linked_List <parser::Ast_Node*>;
 template class utils::Linked_List <parser::Token*>;
@@ -209,6 +217,9 @@ template class utils::Linked_List <char*>;
 template class utils::Linked_List <int>;
 
 template class utils::Data_Linked_List <parser::Pre_Compiler_Define_Instruction*>;
+template class utils::Data_Linked_List <parser::Ast_Node_Function_Declaration*>;
+template class utils::Data_Linked_List <parser::Ast_Node_Variable_Declaration*>;
+template class utils::Data_Linked_List <parser::Ast_Node_Struct_Declaration*>;
 template class utils::Data_Linked_List <parser::Name_Space*>;
 template class utils::Data_Linked_List <parser::Ast_Node*>;
 template class utils::Data_Linked_List <parser::Token*>;
