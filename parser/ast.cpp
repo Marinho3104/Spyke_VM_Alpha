@@ -16,6 +16,7 @@ parser::Ast::~Ast() {
 
     delete name_space_control; 
 
+    std::cout << "Name Space Count -> " << name_space_chain->count << std::endl;
     delete name_space_chain;
     delete implicit_values;
 

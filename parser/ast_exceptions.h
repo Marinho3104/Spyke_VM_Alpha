@@ -74,6 +74,8 @@ namespace parser {
 
         char* information;
 
+        ~Redefinition_Struct_Declaration_Ast();
+
         Redefinition_Struct_Declaration_Ast(Code_Information*, Token*, Token*);
 
         const char* what() const throw();        
@@ -95,6 +97,26 @@ namespace parser {
         char* information;
 
         Redefinition_Variable_Declaration_Ast(Code_Information*, Token*, Token*);
+
+        const char* what() const throw();        
+
+    };
+
+    struct Undefined_Function_Declaration_Ast : public std::exception {
+
+        char* information;
+
+        Undefined_Function_Declaration_Ast(Code_Information*, Token*, int);
+
+        const char* what() const throw();
+
+    };
+
+    struct Redefinition_Function_Declaration_Ast : public std::exception {
+
+        char* information;
+
+        Redefinition_Function_Declaration_Ast(Code_Information*, Token*, Token*);
 
         const char* what() const throw();        
 

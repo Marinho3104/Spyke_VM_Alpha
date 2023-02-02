@@ -2,10 +2,15 @@
 namespace built_ins {
 
     struct Int {
-        
+
     };
 
-    static int m, p, u;
+    int test_func() {
 
+        int m;
+
+        m;
+
+    }
 
 }

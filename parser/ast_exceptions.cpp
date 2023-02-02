@@ -153,6 +153,8 @@ parser::Undefined_Struct_Declaration_Ast::Undefined_Struct_Declaration_Ast(Code_
 const char* parser::Undefined_Struct_Declaration_Ast::what() const throw() { return (const char*) information; }
 
 
+parser::Redefinition_Struct_Declaration_Ast::~Redefinition_Struct_Declaration_Ast() { free(information); }
+
 parser::Redefinition_Struct_Declaration_Ast::Redefinition_Struct_Declaration_Ast(
     Code_Information* __code_information, Token* __previous_declaration, Token* __current_declaration) {
 
@@ -209,6 +211,7 @@ parser::Undefined_Variable_Declaration_Ast::Undefined_Variable_Declaration_Ast(C
 const char* parser::Undefined_Variable_Declaration_Ast::what() const throw() { return (const char*) information; }
 
 
+
 parser::Redefinition_Variable_Declaration_Ast::Redefinition_Variable_Declaration_Ast(Code_Information* __code_information, Token* __previous_declaration, Token* __current_declaration) {
 
         char* _previous_variable_declaration_line = 
@@ -256,3 +259,64 @@ parser::Redefinition_Variable_Declaration_Ast::Redefinition_Variable_Declaration
 }
 
 const char* parser::Redefinition_Variable_Declaration_Ast::what() const throw() { return (const char*) information; }
+
+
+parser::Undefined_Function_Declaration_Ast::Undefined_Function_Declaration_Ast(Code_Information* __code_information, Token* __token, int __inicial_position) {
+
+}
+
+const char* parser::Undefined_Function_Declaration_Ast::what() const throw() { return (const char*) information; }
+
+
+parser::Redefinition_Function_Declaration_Ast::Redefinition_Function_Declaration_Ast(Code_Information* __code_information, Token* __previous_declaration, Token* __current_declaration) {
+
+    char* _previous_variable_declaration_line = 
+        __code_information->get_line(__previous_declaration->position_information.line);
+
+    char* _previous_variable_declaration_error_sign = 
+        __code_information->get_line_error_sign(
+            __previous_declaration->position_information.line, 
+            __previous_declaration->position_information.column, 
+            __previous_declaration->position_information.size
+        );
+
+    char* _current_variable_declaration_line = 
+        __code_information->get_line(__current_declaration->position_information.line);
+
+    char* _current_variable_declaration_error_sign = 
+        __code_information->get_line_error_sign(
+            __current_declaration->position_information.line, 
+            __current_declaration->position_information.column, 
+            __current_declaration->position_information.size
+        );
+
+
+    asprintf(
+        &information,
+        "\n\n" \
+        "\tRedefinition Function Declaration with given parameters:\n\n" \
+        "\t\tPrevious declaration:\n\n" \
+        "\t\t\t%s\n" \
+        "\t\t\t%s\n\n" \
+        "\t\tDeclaration:\n\n" \
+        "\t\t\t%s\n" \
+        "\t\t\t%s\n",
+        _previous_variable_declaration_line,
+        _previous_variable_declaration_error_sign,
+        _current_variable_declaration_line,
+        _current_variable_declaration_error_sign
+    ); 
+
+    free(_previous_variable_declaration_line); free(_previous_variable_declaration_error_sign); 
+
+    free(_current_variable_declaration_line); free(_current_variable_declaration_error_sign);
+
+
+}
+
+const char* parser::Redefinition_Function_Declaration_Ast::what() const throw() { return (const char*) information; }
+
+
+
+
+

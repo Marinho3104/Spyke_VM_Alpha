@@ -34,6 +34,21 @@ namespace parser {
 
     };
 
+    struct Ast_Node_Code_Block : Ast_Node {
+
+        Ast_Node_Code_Block* previous;
+        Name_Space* name_space;
+
+        utils::Linked_List <Ast_Node*>* code;
+
+        ~Ast_Node_Code_Block(); Ast_Node_Code_Block(Ast_Node_Code_Block*, Name_Space*);
+
+        void set_code(Ast*);
+
+        static Ast_Node_Code_Block* generate(Ast*);
+
+    };
+
     struct Ast_Node_Struct_Declaration : Ast_Node {
 
         Ast_Node_Name_Space* body;
@@ -55,11 +70,44 @@ namespace parser {
 
         static Ast_Node_Variable_Declaration* generate(Ast*, Ast_Node_Struct_Declaration*, bool);
         
+        static utils::Linked_List <Ast_Node*>* generate_function_parameters(Ast*);
+                
         static utils::Linked_List <Ast_Node*>* generate(Ast*);
+
+        static void ignore(Ast*);
 
     };
 
-    struct Ast_Node_Function_Declaration : Ast_Node {};
+    struct Ast_Node_Function_Declaration : Ast_Node {
+
+        utils::Linked_List <Type_Information*>* parameters_type;
+        Token* function_token_name;
+        Ast_Node_Code_Block* body;
+        Name_Space* name_space;
+        bool is_static;
+
+        ~Ast_Node_Function_Declaration(); Ast_Node_Function_Declaration(Type_Information*, Token*, Name_Space*, bool);
+
+        void set_this_variable(Ast*);
+
+        void set_parameters(Ast*);
+
+        static Ast_Node_Function_Declaration* generate(Ast*);
+
+        static void ignore(Ast*);
+
+    };
+
+    struct Ast_Node_Expression : Ast_Node {
+
+        utils::Linked_List <Ast_Node*>* values;
+        utils::Linked_List <int>* token_ids;
+
+        ~Ast_Node_Expression(); Ast_Node_Expression();
+
+        static Ast_Node_Expression* generate(Ast*, int);
+
+    };
 
 }
 

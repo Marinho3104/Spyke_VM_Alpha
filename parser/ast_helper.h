@@ -19,6 +19,8 @@ namespace parser {
 
         Ast_Node_Variable_Declaration* get_variable_declaration(char*);
 
+        Ast_Node_Function_Declaration* get_function_declaration(char*, utils::Linked_List <Type_Information*>*, bool);
+
     };
 
     struct Name_Space {
@@ -28,6 +30,8 @@ namespace parser {
         int type;
 
         ~Name_Space(); Name_Space(utils::Linked_List <char*>*, int);
+
+        utils::Linked_List <char*>* get_previous_path();
 
     };
 
@@ -53,6 +57,10 @@ namespace parser {
         int pointer_level;
 
         ~Type_Information(); Type_Information(Ast_Node_Struct_Declaration*, int);
+
+        bool operator==(Type_Information*); bool operator!=(Type_Information*);
+
+        Type_Information* get_copy();
 
         static Type_Information* generate(Ast*, bool);
 

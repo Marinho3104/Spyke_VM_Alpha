@@ -210,6 +210,7 @@ template class utils::Linked_List <parser::Pre_Compiler_Define_Instruction*>;
 template class utils::Linked_List <parser::Ast_Node_Function_Declaration*>;
 template class utils::Linked_List <parser::Ast_Node_Variable_Declaration*>;
 template class utils::Linked_List <parser::Ast_Node_Struct_Declaration*>;
+template class utils::Linked_List <parser::Type_Information*>;
 template class utils::Linked_List <parser::Name_Space*>;
 template class utils::Linked_List <parser::Ast_Node*>;
 template class utils::Linked_List <parser::Token*>;
@@ -220,6 +221,7 @@ template class utils::Data_Linked_List <parser::Pre_Compiler_Define_Instruction*
 template class utils::Data_Linked_List <parser::Ast_Node_Function_Declaration*>;
 template class utils::Data_Linked_List <parser::Ast_Node_Variable_Declaration*>;
 template class utils::Data_Linked_List <parser::Ast_Node_Struct_Declaration*>;
+template class utils::Data_Linked_List <parser::Type_Information*>;
 template class utils::Data_Linked_List <parser::Name_Space*>;
 template class utils::Data_Linked_List <parser::Ast_Node*>;
 template class utils::Data_Linked_List <parser::Token*>;
