@@ -64,6 +64,8 @@ namespace utils {
 
         int getPosition(type, bool (*func) (type, type));
 
+        Linked_List <type>* get_copy(bool);
+
 
     };
 

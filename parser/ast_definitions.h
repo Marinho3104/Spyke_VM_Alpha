@@ -13,6 +13,7 @@
 /* Ast Helper Definitions for get_node_type() */
 
 #define AST_CLOSE_BRACE -1 // }
+#define AST_END_INSTRUCTION -2 // ;
 
 
 /* Name Space Type */

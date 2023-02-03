@@ -64,6 +64,8 @@ namespace parser {
 
         char* information;
 
+        ~Undefined_Struct_Declaration_Ast();
+
         Undefined_Struct_Declaration_Ast(Code_Information*, Token*, int);
 
         const char* what() const throw();
@@ -73,8 +75,6 @@ namespace parser {
     struct Redefinition_Struct_Declaration_Ast : public std::exception {
 
         char* information;
-
-        ~Redefinition_Struct_Declaration_Ast();
 
         Redefinition_Struct_Declaration_Ast(Code_Information*, Token*, Token*);
 

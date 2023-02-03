@@ -24,3 +24,22 @@ char* built_ins::get_struct_name_of_primitive_type(int __token_id) {
     return _struct_name;
 
 }
+
+char* built_ins::get_struct_function_name_of_operation_id(int __operation_id) {
+
+    char* _function_name = 0;
+
+    switch (__operation_id)
+    {
+    case FUNCTION_OPERATOR_PLUS: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_PLUS_FUNCTION_NAME ); break;
+    case FUNCTION_OPERATOR_MINUS: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_MINUS_FUNCTION_NAME ); break;
+    default: break;
+    }
+
+    return _function_name;
+
+}
+
+
+
+

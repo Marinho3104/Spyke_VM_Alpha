@@ -79,6 +79,12 @@ namespace parser {
 
     Declaration_Tracker* get_current_declaration_tracker(Ast*);
 
+    Ast_Node_Variable_Declaration* get_variable_declaration(Ast*, char*);
+
+    Ast_Node_Function_Declaration* get_function_declaration(Ast*, char*, utils::Linked_List <Type_Information*>*, bool);
+
+    Ast_Node_Code_Block* get_code_block_node(Ast*, Name_Space*);
+
 }
 
 #endif

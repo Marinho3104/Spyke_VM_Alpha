@@ -205,11 +205,30 @@ int utils::Linked_List <char*>::getPosition(char* _to_compare, bool (*func) (cha
 
 }
 
+template <typename type>
+utils::Linked_List <type>* utils::Linked_List <type>::get_copy(bool __arg) {
+
+    utils::Linked_List <type>* _new = new utils::Linked_List <type>(__arg);
+
+    for (int _ = 0; _ < count; _++)
+
+        _new->add(
+            operator[](
+                _
+            )
+        );
+
+    return _new;
+
+}
+
+
 
 template class utils::Linked_List <parser::Pre_Compiler_Define_Instruction*>;
 template class utils::Linked_List <parser::Ast_Node_Function_Declaration*>;
 template class utils::Linked_List <parser::Ast_Node_Variable_Declaration*>;
 template class utils::Linked_List <parser::Ast_Node_Struct_Declaration*>;
+template class utils::Linked_List <parser::Ast_Node_Expression*>;
 template class utils::Linked_List <parser::Type_Information*>;
 template class utils::Linked_List <parser::Name_Space*>;
 template class utils::Linked_List <parser::Ast_Node*>;
@@ -221,6 +240,7 @@ template class utils::Data_Linked_List <parser::Pre_Compiler_Define_Instruction*
 template class utils::Data_Linked_List <parser::Ast_Node_Function_Declaration*>;
 template class utils::Data_Linked_List <parser::Ast_Node_Variable_Declaration*>;
 template class utils::Data_Linked_List <parser::Ast_Node_Struct_Declaration*>;
+template class utils::Data_Linked_List <parser::Ast_Node_Expression*>;
 template class utils::Data_Linked_List <parser::Type_Information*>;
 template class utils::Data_Linked_List <parser::Name_Space*>;
 template class utils::Data_Linked_List <parser::Ast_Node*>;

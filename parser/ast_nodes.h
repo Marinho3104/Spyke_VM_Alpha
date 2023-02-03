@@ -105,7 +105,44 @@ namespace parser {
 
         ~Ast_Node_Expression(); Ast_Node_Expression();
 
-        static Ast_Node_Expression* generate(Ast*, int);
+        void set(Ast*);
+
+        void set_representive_type(Ast*);
+
+        static Ast_Node_Expression* generate(Ast*);
+
+        static int get_operation_priority(int);
+
+        static bool is_function_operator(int);
+
+        static Ast_Node* get_value(Ast*);
+
+    };
+
+    struct Ast_Node_Variable : Ast_Node {
+
+        Ast_Node_Variable_Declaration* variable_declaration; 
+        Token* variable_token_name;
+
+        ~Ast_Node_Variable(); Ast_Node_Variable(Ast_Node_Variable_Declaration*, Token*);
+
+        static Ast_Node_Variable* generate(Ast*);
+
+    };
+
+    struct Ast_Node_Function_Call : Ast_Node {
+
+        utils::Linked_List <Ast_Node_Expression*>* parameters;
+        Ast_Node_Function_Declaration* function_declaration;
+        Token* function_token_name;
+
+        ~Ast_Node_Function_Call(); Ast_Node_Function_Call(Token*);
+
+        void set_parameters(Ast*);
+
+        void set_function_declaration(Ast*, Name_Space*);
+
+        static Ast_Node_Function_Call* generate(Ast*);
 
     };
 

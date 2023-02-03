@@ -123,6 +123,8 @@ parser::Undefined_Built_Ins_Name_Space_Path_Ast::Undefined_Built_Ins_Name_Space_
 const char* parser::Undefined_Built_Ins_Name_Space_Path_Ast::what() const throw() { return (const char*) information; }
 
 
+parser::Undefined_Struct_Declaration_Ast::~Undefined_Struct_Declaration_Ast() { free(information); }
+
 parser::Undefined_Struct_Declaration_Ast::Undefined_Struct_Declaration_Ast(Code_Information* __code_information, Token* __token, int __inicial_position) {
 
     char* _inicial_line = 
@@ -147,13 +149,10 @@ parser::Undefined_Struct_Declaration_Ast::Undefined_Struct_Declaration_Ast(Code_
 
     free(_inicial_line); free(_error_sign);
 
-
 }
 
 const char* parser::Undefined_Struct_Declaration_Ast::what() const throw() { return (const char*) information; }
 
-
-parser::Redefinition_Struct_Declaration_Ast::~Redefinition_Struct_Declaration_Ast() { free(information); }
 
 parser::Redefinition_Struct_Declaration_Ast::Redefinition_Struct_Declaration_Ast(
     Code_Information* __code_information, Token* __previous_declaration, Token* __current_declaration) {
@@ -204,7 +203,29 @@ parser::Redefinition_Struct_Declaration_Ast::Redefinition_Struct_Declaration_Ast
 const char* parser::Redefinition_Struct_Declaration_Ast::what() const throw() { return (const char*) information; }
 
 
-parser::Undefined_Variable_Declaration_Ast::Undefined_Variable_Declaration_Ast(Code_Information* __code_information, Token* __token, int __incial_position) {
+parser::Undefined_Variable_Declaration_Ast::Undefined_Variable_Declaration_Ast(Code_Information* __code_information, Token* __token, int __inicial_position) {
+
+    char* _inicial_line = 
+        __code_information->get_line(__token->position_information.line);
+
+    char* _error_sign = 
+        __code_information->get_line_error_sign(
+            __token->position_information.line, 
+            __inicial_position, 
+            __token->position_information.size + __token->position_information.column - __inicial_position
+        );
+
+    asprintf(
+        &information,
+        "\n\n" \
+        "\tUndefined Variable:\n\n" \
+        "\t\t%s\n" \
+        "\t\t%s\n",
+        _inicial_line,
+        _error_sign
+    ); 
+
+    free(_inicial_line); free(_error_sign);
 
 }
 

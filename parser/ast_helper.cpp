@@ -98,6 +98,8 @@ parser::Name_Space::Name_Space(utils::Linked_List <char*>* __path, int __type) :
 
 utils::Linked_List <char*>* parser::Name_Space::get_previous_path() {
 
+    if (!path->count) return 0;
+
     utils::Linked_List <char*>* _path = new utils::Linked_List <char*>();
 
     for (int _ = 0; _ < path->count - 1; _++) 
@@ -155,6 +157,8 @@ void parser::Name_Space_Control::add_name_space(Name_Space* __name_space) {
 }
 
 parser::Name_Space* parser::Name_Space_Control::get_name_space(utils::Linked_List <char*>* __path) {
+
+    if (!__path) return 0;
 
     for (int _ = 0; _ < name_spaces_collection->count; _++)
 
@@ -246,9 +250,13 @@ parser::Type_Information* parser::Type_Information::generate(Ast* __ast, bool __
     Ast_Node_Struct_Declaration* _struct_declaration_node =
         get_current_declaration_tracker(__ast)->get_struct_declaration(_struct_name);
 
-    if (!_struct_declaration_node)
+    if (!_struct_declaration_node) {
+
+        free(_struct_name); 
 
         throw Undefined_Struct_Declaration_Ast(__ast->code_information, __ast->get_token(0), _inicial_position);
+
+    }
 
     __ast->tokens_position++;
 
@@ -290,6 +298,7 @@ int parser::get_node_type(Ast* __ast) {
     {
         // Not Ast Nodes     
         case CLOSE_BRACES: return AST_CLOSE_BRACE; break;
+        case END_INSTRUCTION: return AST_END_INSTRUCTION; break;
 
         // Ast Nodes
         case OPEN_BRACES: return AST_NODE_CODE_BLOCK; break;
@@ -306,9 +315,7 @@ int parser::get_node_type(Ast* __ast) {
 
         try { delete Type_Information::generate(__ast, 1); }
         
-        catch (Undefined_Struct_Declaration_Ast __undefined_struct_declaration) { 
-            
-            __undefined_struct_declaration.~Undefined_Struct_Declaration_Ast(); 
+        catch (...) { 
 
             __ast->tokens_position = _backup_state;
             
@@ -436,3 +443,109 @@ parser::Name_Space* parser::get_name_space_by_path(Ast* __ast) {
 
 parser::Declaration_Tracker* parser::get_current_declaration_tracker(Ast* __ast) 
     { return __ast->name_space_chain->last->object->declaration_tracker; }
+
+parser::Ast_Node_Variable_Declaration* parser::get_variable_declaration(Ast* __ast, char* __variable_name) {
+
+    Name_Space* _name_space = __ast->name_space_chain->last->object;
+    Ast_Node_Variable_Declaration* _variable_declaration_node;
+    utils::Linked_List <char*>* _previous_path;
+
+    if (_name_space->type == NAME_SPACE_TYPE_CODE_BLOCK || _name_space->type == NAME_SPACE_TYPE_FUNCTION_BODY) {
+
+            Ast_Node_Code_Block* _code_block = get_code_block_node(__ast, _name_space);
+
+            while(_code_block) {
+
+                if (
+                    _variable_declaration_node = _code_block->name_space->declaration_tracker->get_variable_declaration(__variable_name)
+                ) return _variable_declaration_node;
+
+                if (!_code_block->previous) _name_space = _code_block->name_space;
+
+                _code_block = _code_block->previous;
+
+            }
+
+    }
+
+    while(_name_space) {
+
+        if (
+            _variable_declaration_node = _name_space->declaration_tracker->get_variable_declaration(__variable_name)
+        ) return _variable_declaration_node;
+
+        _previous_path = _name_space->get_previous_path();
+
+        _name_space = __ast->name_space_control->get_name_space(_previous_path);
+
+        delete _previous_path;
+
+    }
+
+    return 0;
+
+}
+
+parser::Ast_Node_Function_Declaration* parser::get_function_declaration(
+    Ast* __ast, char* __function_name, utils::Linked_List <Type_Information*>* __parameters_type, bool __is_static) {
+
+        Name_Space* _name_space = __ast->name_space_chain->last->object;
+        Ast_Node_Function_Declaration* _function_declaration_node;
+        utils::Linked_List <char*>* _previous_path;
+
+        if (_name_space->type == NAME_SPACE_TYPE_CODE_BLOCK || _name_space->type == NAME_SPACE_TYPE_FUNCTION_BODY) {
+
+            Ast_Node_Code_Block* _code_block = get_code_block_node(__ast, _name_space);
+
+            while(_code_block) {
+
+                if (
+                    _function_declaration_node = 
+                        _code_block->name_space->declaration_tracker->get_function_declaration(__function_name, __parameters_type, __is_static)
+                ) return _function_declaration_node;
+
+                if (!_code_block->previous) _name_space = _code_block->name_space;
+
+                _code_block = _code_block->previous;
+
+            }
+
+        }
+
+        while(_name_space) {
+
+            if (
+                _function_declaration_node = 
+                    _name_space->declaration_tracker->get_function_declaration(__function_name, __parameters_type, __is_static)
+            ) return _function_declaration_node;
+
+            _previous_path = _name_space->get_previous_path();
+
+            _name_space = __ast->name_space_control->get_name_space(_previous_path);
+
+            delete _previous_path;
+
+        }
+
+        return 0;
+
+}
+
+
+parser::Ast_Node_Code_Block* parser::get_code_block_node(Ast* __ast, Name_Space* __name_space) {
+
+    for (int _  = 0; _  < __ast->open_nodes->count; _++) 
+
+        if (
+            __ast->open_nodes->operator[](_)->node_type == AST_NODE_CODE_BLOCK &&
+            ( (Ast_Node_Code_Block*) __ast->open_nodes->operator[](_) )->name_space == __name_space
+        ) return ( (Ast_Node_Code_Block*) __ast->open_nodes->operator[](_) );
+
+    throw Ordinary_Exception_Ast("Internal Error -- No Code Block found in Open Nodes");
+
+    return 0;
+
+}
+
+
+

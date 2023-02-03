@@ -20,5 +20,10 @@
 #define PRIMITIVE_TYPE_POINTER_NAME "Pointer"
 
 
+/* Operators Function Name */
+
+#define FUNCTION_OPERATOR_PLUS_FUNCTION_NAME "add"
+#define FUNCTION_OPERATOR_MINUS_FUNCTION_NAME "sub"
+
 
 
