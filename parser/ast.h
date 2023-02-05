@@ -26,6 +26,8 @@ namespace parser {
 
         void generate_ast_nodes();
 
+        int add_implicit_value(Token*);
+
         void add_to_chain(Name_Space*); void pop_from_chain();
 
         void join_with_current_path(utils::Linked_List <char*>*);

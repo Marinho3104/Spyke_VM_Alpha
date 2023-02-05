@@ -23,6 +23,8 @@ namespace parser {
 
         ~Token(); Token(int, char*, size_t, size_t, size_t); Token(int, char*, Position_Information);
 
+        bool operator==(Token*);
+
         void print();
 
         Token* get_copy();
@@ -30,6 +32,10 @@ namespace parser {
     };
 
     bool is_primitive_type(int);
+
+    bool is_implicit_value_type(int);
+
+    int get_primitive_type_of_implicit_value_type(int);
 
 }
 

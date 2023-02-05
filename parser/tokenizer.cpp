@@ -158,7 +158,7 @@ bool parser::Tokenizer::handle_token_implicit_value() {
         _token
     );
 
-    if (is_int(_identifier, this)) _token->id = PRIMITIVE_TYPE_INT;
+    if (is_int(_identifier, this)) _token->id = IMPLICIT_VALUE_INT;
 
     else {
 

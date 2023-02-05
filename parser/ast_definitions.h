@@ -8,6 +8,8 @@
 #define AST_NODE_EXPRESSION 5
 #define AST_NODE_VARIABLE 6
 #define AST_NODE_FUNCTION_CALL 7
+#define AST_NODE_IMPLICIT_VALUE 8
+#define AST_NODE_POINTER_OPERATION 9
 
 
 /* Ast Helper Definitions for get_node_type() */

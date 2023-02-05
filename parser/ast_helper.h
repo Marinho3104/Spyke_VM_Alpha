@@ -49,6 +49,10 @@ namespace parser {
 
         Name_Space* get_built_ins_name_space();
 
+        Name_Space* get_primitive_type_name_space(Ast*, int);
+
+        static utils::Linked_List <char*>* get_built_ins_path();
+
     };
 
     struct Type_Information {
@@ -60,9 +64,13 @@ namespace parser {
 
         bool operator==(Type_Information*); bool operator!=(Type_Information*);
 
+        bool is_pointer_equal(Type_Information*);
+
         Type_Information* get_copy();
 
         static Type_Information* generate(Ast*, bool);
+
+        static Type_Information* generate_implicit_value(Ast*, int);
 
         static int get_pointer_level(Ast*);
 
@@ -82,6 +90,8 @@ namespace parser {
     Ast_Node_Variable_Declaration* get_variable_declaration(Ast*, char*);
 
     Ast_Node_Function_Declaration* get_function_declaration(Ast*, char*, utils::Linked_List <Type_Information*>*, bool);
+
+    Ast_Node_Struct_Declaration* get_struct_declaration(Ast*, char*);
 
     Ast_Node_Code_Block* get_code_block_node(Ast*, Name_Space*);
 

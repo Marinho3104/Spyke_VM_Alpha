@@ -57,6 +57,8 @@ namespace parser {
 
         ~Ast_Node_Struct_Declaration(); Ast_Node_Struct_Declaration(Token*, Name_Space*);
 
+        bool is_pointer_struct_type();
+
         static Ast_Node_Struct_Declaration* generate(Ast*);
 
     };
@@ -101,7 +103,7 @@ namespace parser {
     struct Ast_Node_Expression : Ast_Node {
 
         utils::Linked_List <Ast_Node*>* values;
-        utils::Linked_List <int>* token_ids;
+        utils::Linked_List <Token*>* token_ids;
 
         ~Ast_Node_Expression(); Ast_Node_Expression();
 
@@ -140,9 +142,25 @@ namespace parser {
 
         void set_parameters(Ast*);
 
-        void set_function_declaration(Ast*, Name_Space*);
+        void set_function_declaration(Ast*, Name_Space*, int);
 
         static Ast_Node_Function_Call* generate(Ast*);
+
+    };
+
+    struct Ast_Node_Implicit_Value : Ast_Node {
+
+        int implicit_value_position;
+
+        ~Ast_Node_Implicit_Value(); Ast_Node_Implicit_Value(Type_Information*, int);
+
+        static Ast_Node_Implicit_Value* generate(Ast*);
+
+    };
+
+    struct Ast_Node_Pointer_Operation : Ast_Node {
+
+        
 
     };
 
