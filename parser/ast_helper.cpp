@@ -405,9 +405,13 @@ int parser::get_node_type(Ast* __ast) {
         case END_INSTRUCTION: return AST_END_INSTRUCTION; break;
 
         // Ast Nodes
-        case OPEN_BRACES: return AST_NODE_CODE_BLOCK; break;
         case NAMESPACE: return AST_NODE_NAME_SPACE; break;
+        case OPEN_BRACES: return AST_NODE_CODE_BLOCK; break;
         case STRUCT: return AST_NODE_STRUCT_DECLARATION; break;
+        case OPEN_PARENTHESIS: return AST_NODE_PARENTHESIS; break;
+        case POINTER: case ADDRESS: return AST_NODE_POINTER_OPERATION; break;
+
+        // No Return
         case STATIC: __ast->tokens_position++; break;
         
         default: break;

@@ -179,7 +179,13 @@ void parser::Ast_Node_Code_Block::set_code(Ast* __ast) {
             case AST_NODE_CODE_BLOCK: code->add(Ast_Node_Code_Block::generate(__ast)); break;
             case AST_NODE_VARIABLE_DECLARATION: 
                 { utils::Linked_List <Ast_Node*>* _ = Ast_Node_Variable_Declaration::generate(__ast); code->join(_); delete _; break; }
-            case AST_NODE_VARIABLE: case AST_NODE_FUNCTION_CALL: code->add(Ast_Node_Expression::generate(__ast)); break;
+            case AST_NODE_VARIABLE: case AST_NODE_FUNCTION_CALL: case AST_NODE_IMPLICIT_VALUE: case AST_NODE_POINTER_OPERATION: case AST_NODE_PARENTHESIS:
+                
+                code->add(Ast_Node_Expression::generate(__ast)); 
+                
+                if (__ast->get_token(0)->id != END_INSTRUCTION) throw Expected_Token_Ast(__ast->code_information, __ast->get_token(0), END_INSTRUCTION);
+                
+                __ast->tokens_position++; break;
 
             default: throw Unexpected_Token_Ast(__ast->code_information, __ast->get_token(0)); break;
         }
@@ -761,6 +767,11 @@ void parser::Ast_Node_Expression::set(Ast* __ast) {
 
         _value = get_value(__ast);
 
+        if (__ast->get_token(0)->id == POINTER || __ast->get_token(0)->id == ADDRESS)
+
+            __ast->get_token(0)->id = 
+                __ast->get_token(0)->id == POINTER ? FUNCTION_OPERATOR_MULTIPLICATION : FUNCTION_OPERATOR_BITWISE_AND;
+
         _token_id = is_function_operator(__ast->get_token(0)->id) ? __ast->get_token(0) : 0;
 
         values->add(_value); token_ids->add(_token_id);
@@ -912,8 +923,10 @@ parser::Ast_Node* parser::Ast_Node_Expression::get_value(Ast* __ast) {
     switch (get_node_type(__ast))
     {
     case AST_NODE_VARIABLE: return Ast_Node_Variable::generate(__ast); break;
+    case AST_NODE_PARENTHESIS: return Ast_Node_Parenthesis::generate(__ast); break;
     case AST_NODE_FUNCTION_CALL: return Ast_Node_Function_Call::generate(__ast); break;
     case AST_NODE_IMPLICIT_VALUE: return Ast_Node_Implicit_Value::generate(__ast); break;
+    case AST_NODE_POINTER_OPERATION: return Ast_Node_Pointer_Operation::generate(__ast); break;
     default: throw Unexpected_Token_Ast(__ast->code_information, __ast->get_token(0)); break;
     }
 
@@ -1023,7 +1036,7 @@ void parser::Ast_Node_Function_Call::set_function_declaration(Ast* __ast, Name_S
     function_declaration = 
         get_function_declaration(__ast, function_token_name->identifier, _parameters_type, 0);
     
-    if (!function_declaration) throw Undefined_Function_Declaration_Ast(__ast->code_information, __ast->get_token(0), __backup_state);
+    if (!function_declaration) throw Undefined_Function_Declaration_Ast(__ast->code_information, __ast->get_token(-1), __backup_state);
 
     representive_type = function_declaration->representive_type;
 
@@ -1102,3 +1115,112 @@ parser::Ast_Node_Implicit_Value* parser::Ast_Node_Implicit_Value::generate(Ast* 
 
 }
 
+
+
+parser::Ast_Node_Pointer_Operation::~Ast_Node_Pointer_Operation() 
+    { delete representive_type; delete pointer_operations; value->~Ast_Node(); free(value); }
+
+parser::Ast_Node_Pointer_Operation::Ast_Node_Pointer_Operation(utils::Linked_List <Token*>* __pointer_operations, int __pointer_level) 
+    : Ast_Node(AST_NODE_POINTER_OPERATION, 0), pointer_operations(__pointer_operations), pointer_level(__pointer_level) {}
+
+void parser::Ast_Node_Pointer_Operation::set_value(Ast* __ast) {
+
+    switch (get_node_type(__ast))
+    {
+    case AST_NODE_VARIABLE: value = Ast_Node_Variable::generate(__ast); break;
+    case AST_NODE_FUNCTION_CALL: value = Ast_Node_Function_Call::generate(__ast); break;
+    case AST_NODE_IMPLICIT_VALUE: value = Ast_Node_Implicit_Value::generate(__ast); break;
+    default: throw Unexpected_Token_Ast(__ast->code_information, __ast->get_token(0)); break;
+    }
+
+}
+
+void parser::Ast_Node_Pointer_Operation::set_representive_value(Ast* __ast) {
+
+    representive_type = value->representive_type->get_copy();
+
+    representive_type->pointer_level += pointer_level;
+
+    if (representive_type->pointer_level < 0) 
+        throw Pointer_Operations_Below_0_Ast(__ast->code_information, pointer_operations);
+    
+}
+
+parser::Ast_Node_Pointer_Operation* parser::Ast_Node_Pointer_Operation::generate(Ast* __ast) {
+
+    __ast->print("--> Ast Node Pointer Operation <--");
+
+    utils::Linked_List <Token*>* _pointer_operations = 
+        new utils::Linked_List <Token*>(0);
+    int _pointer_level = 0;
+
+    while (
+        __ast->get_token(0)->id == POINTER || __ast->get_token(0)->id == ADDRESS
+    ) { _pointer_operations->add(__ast->get_token(0)); _pointer_level += __ast->get_token(0)->id == POINTER ? -1 : 1; __ast->tokens_position++; }
+    
+    Ast_Node_Pointer_Operation* _pointer_operation_node = (Ast_Node_Pointer_Operation*) malloc(sizeof(Ast_Node_Pointer_Operation));
+
+    new (_pointer_operation_node) Ast_Node_Pointer_Operation(
+        _pointer_operations, _pointer_level
+    );
+
+    __ast->open_nodes->add(
+        _pointer_operation_node, 0
+    );
+
+    _pointer_operation_node->set_value(__ast);
+
+    _pointer_operation_node->set_representive_value(__ast);
+
+    delete __ast->open_nodes->remove(
+        __ast->open_nodes->count
+    );
+
+    __ast->print("--> Ast Node Pointer Operation End <--");
+
+    return _pointer_operation_node;
+
+}
+
+
+
+parser::Ast_Node_Parenthesis::~Ast_Node_Parenthesis() { expression->~Ast_Node_Expression(); free(expression); } 
+
+parser::Ast_Node_Parenthesis::Ast_Node_Parenthesis() : Ast_Node(AST_NODE_PARENTHESIS, 0) {}
+
+void parser::Ast_Node_Parenthesis::set_expression(Ast* __ast) { expression = Ast_Node_Expression::generate(__ast); }
+
+void parser::Ast_Node_Parenthesis::set_representive_type() { representive_type = expression->representive_type; }
+
+parser::Ast_Node_Parenthesis* parser::Ast_Node_Parenthesis::generate(Ast* __ast) {
+
+    __ast->print("--> Ast Node Parenthesis <--");
+
+    __ast->tokens_position++;
+    
+    Ast_Node_Parenthesis* _parenthesis_node = (Ast_Node_Parenthesis*) malloc(sizeof(Ast_Node_Parenthesis));
+
+    new (_parenthesis_node) Ast_Node_Parenthesis();
+
+    __ast->open_nodes->add(
+        _parenthesis_node, 0
+    );
+
+    _parenthesis_node->set_expression(__ast);
+
+    if (__ast->get_token(0)->id != CLOSE_PARENTHESIS) 
+        throw Expected_Token_Ast(__ast->code_information, __ast->get_token(0), CLOSE_PARENTHESIS);
+
+    __ast->tokens_position++;
+
+    _parenthesis_node->set_representive_type();
+
+    delete __ast->open_nodes->remove(
+        __ast->open_nodes->count
+    );
+
+    __ast->print("--> Ast Node Parenthesis End <--");
+
+    return _parenthesis_node;
+
+}

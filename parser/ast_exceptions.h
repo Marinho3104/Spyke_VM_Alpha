@@ -122,6 +122,16 @@ namespace parser {
 
     };
 
+    struct Pointer_Operations_Below_0_Ast : public std::exception {
+
+        char* information;
+
+        Pointer_Operations_Below_0_Ast(Code_Information*, utils::Linked_List <Token*>*);
+
+        const char* what() const throw();      
+
+    };
+
 }
 
 #endif

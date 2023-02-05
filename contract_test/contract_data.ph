@@ -5,7 +5,9 @@ namespace built_ins {
 
     struct Int {
 
-        int add(int) {}
+        bool add(bool) {}
+
+        bool sub(int) {}
 
     };
 
@@ -19,28 +21,19 @@ namespace built_ins {
 
 }
 
-namespace name_space_test {
-
-    int call_func(int) {
-
-    }
-        
-}
-
-
 namespace test {
 
     pointer lo;
 
     int* m, mm;
 
-    int call_func(int) {
+    int call_func(int*) {
 
     }
 
     bool test_func() {
 
-        m + 12;
+        12 + (12 + (12 - 12));
 
     }
 

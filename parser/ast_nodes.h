@@ -160,7 +160,31 @@ namespace parser {
 
     struct Ast_Node_Pointer_Operation : Ast_Node {
 
-        
+        utils::Linked_List <Token*>* pointer_operations;
+        int pointer_level;
+        Ast_Node* value;
+
+        ~Ast_Node_Pointer_Operation(); Ast_Node_Pointer_Operation(utils::Linked_List <Token*>*, int);
+
+        void set_value(Ast*);
+
+        void set_representive_value(Ast*);
+
+        static Ast_Node_Pointer_Operation* generate(Ast*);
+
+    };
+
+    struct Ast_Node_Parenthesis : Ast_Node {
+
+        Ast_Node_Expression* expression;
+
+        ~Ast_Node_Parenthesis(); Ast_Node_Parenthesis();
+
+        void set_expression(Ast*);
+
+        void set_representive_type();
+
+        static Ast_Node_Parenthesis* generate(Ast*);
 
     };
 

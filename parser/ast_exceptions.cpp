@@ -359,6 +359,35 @@ parser::Redefinition_Function_Declaration_Ast::Redefinition_Function_Declaration
 const char* parser::Redefinition_Function_Declaration_Ast::what() const throw() { return (const char*) information; }
 
 
+parser::Pointer_Operations_Below_0_Ast::Pointer_Operations_Below_0_Ast(Code_Information* __code_information, utils::Linked_List <Token*>* __pointer_operations) {
+
+    char* _inicial_line = 
+        __code_information->get_line(__pointer_operations->first->object->position_information.line);
+
+    char* _error_sign = 
+        __code_information->get_line_error_sign(
+            __pointer_operations->first->object->position_information.line, 
+            __pointer_operations->first->object->position_information.column, 
+            __pointer_operations->last->object->position_information.column + 1 - 
+                __pointer_operations->first->object->position_information.column
+        );
+
+    asprintf(
+        &information,
+        "\n\n" \
+        "\tPointer Operations below 0:\n\n" \
+        "\t\t%s\n" \
+        "\t\t%s\n",
+        _inicial_line,
+        _error_sign
+    ); 
+
+    free(_inicial_line); free(_error_sign);
+
+
+}
+
+const char* parser::Pointer_Operations_Below_0_Ast::what() const throw() { return (const char*) information; }
 
 
 
