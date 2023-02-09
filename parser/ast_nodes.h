@@ -26,7 +26,7 @@ namespace parser {
 
         void set_declarations(Ast*);
 
-        void set_declarations_struct_body(Ast*);
+        void set_declarations_struct_body(Ast*, bool&);
 
         static Ast_Node_Name_Space* generate(Ast*, Name_Space*);
 
@@ -59,7 +59,9 @@ namespace parser {
 
         bool is_pointer_struct_type();
 
-        static Ast_Node_Struct_Declaration* generate(Ast*);
+        static utils::Linked_List <Ast_Node*>* generate(Ast*);
+
+        static utils::Linked_List <Ast_Node*>* generate_variable_declarations(Ast*, Ast_Node_Struct_Declaration*);
 
     };
 
@@ -70,8 +72,10 @@ namespace parser {
 
         ~Ast_Node_Variable_Declaration(); Ast_Node_Variable_Declaration(Type_Information*, Token*, bool);
 
-        static Ast_Node_Variable_Declaration* generate(Ast*, Ast_Node_Struct_Declaration*, bool);
+        static Ast_Node_Variable_Declaration* generate(Ast*, Ast_Node_Struct_Declaration*, bool, int);
         
+        static utils::Linked_List <Ast_Node*>* generate_struct_declaration_variables(Ast*, Ast_Node_Struct_Declaration*);
+
         static utils::Linked_List <Ast_Node*>* generate_function_parameters(Ast*);
                 
         static utils::Linked_List <Ast_Node*>* generate(Ast*);
@@ -83,16 +87,18 @@ namespace parser {
     struct Ast_Node_Function_Declaration : Ast_Node {
 
         utils::Linked_List <Type_Information*>* parameters_type;
+        bool is_static, body_defined, destructor;
         Token* function_token_name;
         Ast_Node_Code_Block* body;
         Name_Space* name_space;
-        bool is_static;
 
         ~Ast_Node_Function_Declaration(); Ast_Node_Function_Declaration(Type_Information*, Token*, Name_Space*, bool);
 
         void set_this_variable(Ast*);
 
         void set_parameters(Ast*);
+
+        static Ast_Node_Function_Declaration* generate(Ast*, bool);
 
         static Ast_Node_Function_Declaration* generate(Ast*);
 
@@ -128,7 +134,7 @@ namespace parser {
 
         ~Ast_Node_Variable(); Ast_Node_Variable(Ast_Node_Variable_Declaration*, Token*);
 
-        static Ast_Node_Variable* generate(Ast*);
+        static Ast_Node* generate(Ast*);
 
     };
 
@@ -142,9 +148,11 @@ namespace parser {
 
         void set_parameters(Ast*);
 
-        void set_function_declaration(Ast*, Name_Space*, int);
+        void set_function_declaration(Ast*, Name_Space*, int, bool);
 
-        static Ast_Node_Function_Call* generate(Ast*);
+        static Ast_Node* generate_accessing_function_call(Ast*, Ast_Node_Expression*);
+
+        static Ast_Node* generate(Ast*);
 
     };
 
@@ -154,7 +162,7 @@ namespace parser {
 
         ~Ast_Node_Implicit_Value(); Ast_Node_Implicit_Value(Type_Information*, int);
 
-        static Ast_Node_Implicit_Value* generate(Ast*);
+        static Ast_Node* generate(Ast*);
 
     };
 
@@ -184,7 +192,36 @@ namespace parser {
 
         void set_representive_type();
 
-        static Ast_Node_Parenthesis* generate(Ast*);
+        static Ast_Node* generate(Ast*);
+
+    };
+
+    struct Ast_Node_Accessing : Ast_Node {
+
+        Ast_Node* value, *accessing;
+        bool is_pointer_accessing;
+
+        ~Ast_Node_Accessing(); Ast_Node_Accessing(Ast_Node*, bool);
+
+        void set_accessing(Ast*);
+
+        static Ast_Node_Accessing* generate(Ast*, Ast_Node*);
+
+    };
+
+    struct Ast_Node_Byte_Code : Ast_Node {
+
+        Ast_Node* code, *argument;
+
+        ~Ast_Node_Byte_Code(); Ast_Node_Byte_Code();
+
+        static Ast_Node_Byte_Code* generate(Ast*);
+
+    };
+
+    struct Ast_Node_Constructor_Call : Ast_Node {
+
+        // TODO
 
     };
 

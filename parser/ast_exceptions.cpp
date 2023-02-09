@@ -13,6 +13,8 @@ parser::Ordinary_Exception_Ast::Ordinary_Exception_Ast(const char* __info) : inf
 const char* parser::Ordinary_Exception_Ast::what() const throw() { return information; }
 
 
+parser::Unexpected_Token_Ast::~Unexpected_Token_Ast() { free(information); }
+
 parser::Unexpected_Token_Ast::Unexpected_Token_Ast(Code_Information* __code_information, Token* __token) {
 
     char* _inicial_line = 
@@ -390,4 +392,58 @@ parser::Pointer_Operations_Below_0_Ast::Pointer_Operations_Below_0_Ast(Code_Info
 const char* parser::Pointer_Operations_Below_0_Ast::what() const throw() { return (const char*) information; }
 
 
+parser::Unmatched_Accessing_Operation_Ast::Unmatched_Accessing_Operation_Ast(Code_Information* __code_information, Token* __token) {
+
+    char* _inicial_line = 
+        __code_information->get_line(__token->position_information.line);
+
+    char* _error_sign = 
+        __code_information->get_line_error_sign(__token->position_information.line, __token->position_information.column, __token->position_information.size);
+
+    asprintf(
+        &information,
+        "\n\n" \
+        "\tUnmatched Accessing Operation: \n\n" \
+        "\t\t%s\n" \
+        "\t\t%s\n",
+        _inicial_line,
+        _error_sign
+    ); 
+
+    free(_inicial_line); free(_error_sign);
+
+}
+
+const char* parser::Unmatched_Accessing_Operation_Ast::what() const throw() { return (const char*) information; }
+
+
+parser::Struct_Body_Not_Defined_Ast::~Struct_Body_Not_Defined_Ast() { free(information); }
+
+parser::Struct_Body_Not_Defined_Ast::Struct_Body_Not_Defined_Ast(Code_Information* __code_information, Token* __token, int __inicial_position) {
+
+    char* _inicial_line = 
+        __code_information->get_line(__token->position_information.line);
+
+    char* _error_sign = 
+        __code_information->get_line_error_sign(
+            __token->position_information.line, 
+            __inicial_position, 
+            __token->position_information.size + __token->position_information.column - __inicial_position
+        );
+
+    asprintf(
+        &information,
+        "\n\n" \
+        "\tStruct Body Not Defined:\n\n" \
+        "\t\t%s\n" \
+        "\t\t%s\n",
+        _inicial_line,
+        _error_sign
+    ); 
+
+    free(_inicial_line); free(_error_sign);
+
+}
+
+const char* parser::Struct_Body_Not_Defined_Ast::what() const throw() { return (const char*) information; }
 

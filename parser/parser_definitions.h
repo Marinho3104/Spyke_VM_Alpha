@@ -36,6 +36,7 @@ namespace parser {
     struct Ast_Node;
     struct Ast_Node_Code_Block;
     struct Ast_Node_Name_Space;
+    struct Ast_Node_Expression;
     struct Ast_Node_Struct_Declaration;
     struct Ast_Node_Variable_Declaration;
     struct Ast_Node_Function_Declaration;

@@ -55,7 +55,7 @@ parser::Ast_Node_Variable_Declaration* parser::Declaration_Tracker::get_variable
 }
 
 parser::Ast_Node_Function_Declaration* parser::Declaration_Tracker::get_function_declaration(
-    char* __function_name, utils::Linked_List <Type_Information*>* __parameters_types, bool __is_static) {
+    char* __function_name, utils::Linked_List <Type_Information*>* __parameters_types, bool __is_static, bool __destructor) {
 
         Ast_Node_Function_Declaration* _function_declaration;
 
@@ -70,10 +70,12 @@ parser::Ast_Node_Function_Declaration* parser::Declaration_Tracker::get_function
 
                 // std::cout << "Count Compare -> " << _function_declaration->parameters_type->count << " " << __parameters_types->count << std::endl;
                 // std::cout << "Static Compare -> " << _function_declaration->is_static << " " << __is_static << std::endl;
+                // std::cout << "Destructor Compare -> " << _function_declaration->destructor << " " << __destructor << std::endl;
 
                 if (
                     _function_declaration->parameters_type->count != __parameters_types->count || 
-                    _function_declaration->is_static != __is_static
+                    _function_declaration->is_static != __is_static || 
+                    _function_declaration->destructor != __destructor
                 ) _function_declaration = 0;
 
                 for (int _ = 0; _ < __parameters_types->count && _function_declaration; _++)
@@ -235,7 +237,7 @@ utils::Linked_List <char*>* parser::Name_Space_Control::get_built_ins_path() {
 parser::Type_Information::~Type_Information() {}
 
 parser::Type_Information::Type_Information(Ast_Node_Struct_Declaration* __declaration_node, int __pointer_level) 
-    : pointer_level(__pointer_level), declaration(__declaration_node) {}
+    : pointer_level(__pointer_level), declaration(__declaration_node), inicial_position(0) {}
 
 bool parser::Type_Information::operator==(Type_Information* __to_compare) {
 
@@ -307,7 +309,9 @@ parser::Type_Information* parser::Type_Information::generate(Ast* __ast, bool __
     else throw Unexpected_Token_Ast(__ast->code_information, __ast->get_token(0));
 
     Ast_Node_Struct_Declaration* _struct_declaration_node =
-        get_current_declaration_tracker(__ast)->get_struct_declaration(_struct_name);
+        get_struct_declaration(__ast, _struct_name);
+        
+        //get_current_declaration_tracker(__ast)->get_struct_declaration(_struct_name);
 
     if (!_struct_declaration_node) {
 
@@ -333,6 +337,84 @@ parser::Type_Information* parser::Type_Information::generate(Ast* __ast, bool __
     free(_struct_name);
 
     return _type_information;
+
+}
+
+parser::Type_Information* parser::Type_Information::generate_confirm_body(Ast* __ast, bool __pointer_level) {
+
+    int _inicial_position = __ast->get_token(0)->position_information.column;
+
+    Name_Space* _name_space;
+
+    if (_name_space = get_name_space_by_path(__ast)) __ast->add_to_chain(_name_space);
+
+    bool _is_primitive_type = 0;
+    char* _struct_name;
+
+    if (is_primitive_type(__ast->get_token(0)->id) && !_name_space) {
+
+        _is_primitive_type = 1;
+
+        _name_space = __ast->name_space_control->get_built_ins_name_space();
+
+        if (!_name_space) 
+            throw Undefined_Built_Ins_Name_Space_Path_Ast(__ast->code_information, __ast->get_token(0));
+
+        __ast->add_to_chain(_name_space);
+
+        _struct_name = built_ins::get_struct_name_of_primitive_type(__ast->get_token(0)->id);
+
+    }
+
+    else if (__ast->get_token(0)->id == IDENTIFIER) 
+    
+        _struct_name = utils::get_string_copy(
+            __ast->get_token(0)->identifier
+        );
+
+    else throw Unexpected_Token_Ast(__ast->code_information, __ast->get_token(0));
+
+    Ast_Node_Struct_Declaration* _struct_declaration_node =
+        get_struct_declaration(__ast, _struct_name);
+        
+        //get_current_declaration_tracker(__ast)->get_struct_declaration(_struct_name);
+
+    if (!_struct_declaration_node) {
+
+        if (_name_space) __ast->pop_from_chain();
+
+        free(_struct_name); 
+
+        throw Undefined_Struct_Declaration_Ast(__ast->code_information, __ast->get_token(0), _inicial_position);
+
+    }
+
+    __ast->tokens_position++;
+
+    int _pointer_level = __pointer_level ? get_pointer_level(__ast) : -1;
+
+    if (!_struct_declaration_node->body_defined && !_is_primitive_type && !_pointer_level) {
+
+        if (_name_space) __ast->pop_from_chain();
+
+        free(_struct_name); 
+
+        throw Struct_Body_Not_Defined_Ast(__ast->code_information, __ast->get_token(-1), _inicial_position);
+    }
+
+    Type_Information* _type_information = 
+        new Type_Information(
+            _struct_declaration_node, _pointer_level
+        );
+
+    _type_information->inicial_position = _inicial_position;
+
+    if (_name_space) __ast->pop_from_chain();
+
+    free(_struct_name);
+
+    return _type_information;
+
 
 }
 
@@ -379,6 +461,47 @@ parser::Type_Information* parser::Type_Information::generate_implicit_value(Ast*
 
 }
 
+parser::Type_Information* parser::Type_Information::generate_primitive_type(Ast* __ast, int __primitive_type) {
+
+    int _inicial_position = __ast->get_token(0)->position_information.column;
+
+    Name_Space* _built_ins_name_space = __ast->name_space_control->get_built_ins_name_space();
+
+    if (!_built_ins_name_space) 
+        throw Undefined_Built_Ins_Name_Space_Path_Ast(__ast->code_information, __ast->get_token(0));
+
+    __ast->add_to_chain(_built_ins_name_space);
+
+    char* _struct_name = built_ins::get_struct_name_of_primitive_type(
+            __primitive_type
+    );
+
+    Ast_Node_Struct_Declaration* _struct_declaration_node =
+        get_current_declaration_tracker(__ast)->get_struct_declaration(_struct_name);
+
+    if (!_struct_declaration_node) {
+
+        __ast->pop_from_chain();
+
+        free(_struct_name); 
+
+        throw Undefined_Struct_Declaration_Ast(__ast->code_information, __ast->get_token(0), _inicial_position);
+
+    }
+
+    Type_Information* _type_information = 
+        new Type_Information(
+            _struct_declaration_node, 0
+        );
+
+    __ast->pop_from_chain();
+
+    free(_struct_name);
+
+    return _type_information;
+
+}
+
 int parser::Type_Information::get_pointer_level(Ast* __ast) {
 
     int _pointer_level = 0;
@@ -403,13 +526,17 @@ int parser::get_node_type(Ast* __ast) {
         // Not Ast Nodes     
         case CLOSE_BRACES: return AST_CLOSE_BRACE; break;
         case END_INSTRUCTION: return AST_END_INSTRUCTION; break;
+        case CLOSE_PARENTHESIS: return AST_CLOSE_PARENTHESIS; break;
+        case FUNCTION_OPERATOR_BITWISE_NOT: return AST_BITWISE_NOT; break;
 
         // Ast Nodes
+        case EXEC: return AST_NODE_BYTE_CODE; break;
         case NAMESPACE: return AST_NODE_NAME_SPACE; break;
         case OPEN_BRACES: return AST_NODE_CODE_BLOCK; break;
         case STRUCT: return AST_NODE_STRUCT_DECLARATION; break;
         case OPEN_PARENTHESIS: return AST_NODE_PARENTHESIS; break;
         case POINTER: case ADDRESS: return AST_NODE_POINTER_OPERATION; break;
+        case ACCESSING: case ACCESSING_POINTER: return AST_NODE_ACCESSING; break;
 
         // No Return
         case STATIC: __ast->tokens_position++; break;
@@ -423,7 +550,7 @@ int parser::get_node_type(Ast* __ast) {
 
         try { delete Type_Information::generate(__ast, 1); }
         
-        catch (...) { 
+        catch (Undefined_Struct_Declaration_Ast&) { 
 
             __ast->tokens_position = _backup_state;
             
@@ -436,7 +563,8 @@ int parser::get_node_type(Ast* __ast) {
             return _node_type;
 
         }
-        
+
+        if (__ast->get_token(0)->id == OPEN_PARENTHESIS) { __ast->tokens_position = _backup_state; return AST_NODE_FUNCTION_CALL; }
 
         get_name_space_by_path(__ast);
 
@@ -560,7 +688,7 @@ parser::Ast_Node_Variable_Declaration* parser::get_variable_declaration(Ast* __a
     Ast_Node_Variable_Declaration* _variable_declaration_node;
     utils::Linked_List <char*>* _previous_path;
 
-    if (_name_space->type == NAME_SPACE_TYPE_CODE_BLOCK || _name_space->type == NAME_SPACE_TYPE_FUNCTION_BODY) {
+    if (_name_space->type == NAME_SPACE_TYPE_CODE_BLOCK) {
 
             Ast_Node_Code_Block* _code_block = get_code_block_node(__ast, _name_space);
 
@@ -597,13 +725,13 @@ parser::Ast_Node_Variable_Declaration* parser::get_variable_declaration(Ast* __a
 }
 
 parser::Ast_Node_Function_Declaration* parser::get_function_declaration(
-    Ast* __ast, char* __function_name, utils::Linked_List <Type_Information*>* __parameters_type, bool __is_static) {
+    Ast* __ast, char* __function_name, utils::Linked_List <Type_Information*>* __parameters_type, bool __is_static, bool __destructor) {
 
         Name_Space* _name_space = __ast->name_space_chain->last->object;
         Ast_Node_Function_Declaration* _function_declaration_node;
         utils::Linked_List <char*>* _previous_path;
 
-        if (_name_space->type == NAME_SPACE_TYPE_CODE_BLOCK || _name_space->type == NAME_SPACE_TYPE_FUNCTION_BODY) {
+        if (_name_space->type == NAME_SPACE_TYPE_CODE_BLOCK) {
 
             Ast_Node_Code_Block* _code_block = get_code_block_node(__ast, _name_space);
 
@@ -611,7 +739,7 @@ parser::Ast_Node_Function_Declaration* parser::get_function_declaration(
 
                 if (
                     _function_declaration_node = 
-                        _code_block->name_space->declaration_tracker->get_function_declaration(__function_name, __parameters_type, __is_static)
+                        _code_block->name_space->declaration_tracker->get_function_declaration(__function_name, __parameters_type, __is_static, __destructor)
                 ) return _function_declaration_node;
 
                 if (!_code_block->previous) _name_space = _code_block->name_space;
@@ -626,7 +754,7 @@ parser::Ast_Node_Function_Declaration* parser::get_function_declaration(
 
             if (
                 _function_declaration_node = 
-                    _name_space->declaration_tracker->get_function_declaration(__function_name, __parameters_type, __is_static)
+                    _name_space->declaration_tracker->get_function_declaration(__function_name, __parameters_type, __is_static, __destructor)
             ) return _function_declaration_node;
 
             _previous_path = _name_space->get_previous_path();
@@ -647,7 +775,7 @@ parser::Ast_Node_Struct_Declaration* parser::get_struct_declaration(Ast* __ast, 
     Ast_Node_Struct_Declaration* _struct_declaration_node;
     utils::Linked_List <char*>* _previous_path;
 
-    if (_name_space->type == NAME_SPACE_TYPE_CODE_BLOCK || _name_space->type == NAME_SPACE_TYPE_FUNCTION_BODY) {
+    if (_name_space->type == NAME_SPACE_TYPE_CODE_BLOCK) {
 
             Ast_Node_Code_Block* _code_block = get_code_block_node(__ast, _name_space);
 

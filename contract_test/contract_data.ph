@@ -1,11 +1,13 @@
 
 namespace built_ins {
 
+    struct Void {};
+
     struct Bool {};
 
     struct Int {
 
-        bool add(bool) {}
+        int add(int) {}
 
         bool sub(int) {}
 
@@ -17,23 +19,43 @@ namespace built_ins {
 
         int add(int, int) {}
 
+        int testing_function_hello(int);
+
     };
 
 }
 
-namespace test {
+namespace popo {
 
-    pointer lo;
+int call_func(int*) {
 
-    int* m, mm;
+}
 
-    int call_func(int*) {
+}
 
-    }
+namespace test_1 {
+
+    struct Struct_Test {
+
+        ~Struct_Test();
+        
+        Struct_Test();
+
+        Struct_Test(int);
+
+        Struct_Test* l;
+
+        Struct_Test ola();
+
+    };
 
     bool test_func() {
 
-        12 + (12 + (12 - 12));
+        Struct_Test _ola;
+
+        _ola.~Struct_Test(12);
+
+
 
     }
 

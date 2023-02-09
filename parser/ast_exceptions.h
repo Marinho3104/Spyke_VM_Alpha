@@ -24,6 +24,8 @@ namespace parser {
 
         char* information;
 
+        ~Unexpected_Token_Ast();
+
         Unexpected_Token_Ast(Code_Information*, Token*);
 
         const char* what() const throw();
@@ -129,6 +131,28 @@ namespace parser {
         Pointer_Operations_Below_0_Ast(Code_Information*, utils::Linked_List <Token*>*);
 
         const char* what() const throw();      
+
+    };
+
+    struct Unmatched_Accessing_Operation_Ast : public std::exception {
+
+        char* information;
+
+        Unmatched_Accessing_Operation_Ast(Code_Information*, Token*);
+
+        const char* what() const throw();
+
+    };
+
+    struct Struct_Body_Not_Defined_Ast : public std::exception {
+
+        char* information;
+
+        ~Struct_Body_Not_Defined_Ast();
+
+        Struct_Body_Not_Defined_Ast(Code_Information*, Token*, int);
+
+        const char* what() const throw();
 
     };
 

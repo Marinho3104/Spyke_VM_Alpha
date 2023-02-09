@@ -11,12 +11,16 @@
 #define AST_NODE_IMPLICIT_VALUE 8
 #define AST_NODE_POINTER_OPERATION 9
 #define AST_NODE_PARENTHESIS 10
+#define AST_NODE_ACCESSING 11
+#define AST_NODE_BYTE_CODE 12
 
 
 /* Ast Helper Definitions for get_node_type() */
 
 #define AST_CLOSE_BRACE -1 // }
 #define AST_END_INSTRUCTION -2 // ;
+#define AST_CLOSE_PARENTHESIS -3 // )
+#define AST_BITWISE_NOT -4 // ~
 
 
 /* Name Space Type */
