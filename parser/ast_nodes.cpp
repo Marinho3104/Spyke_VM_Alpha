@@ -639,10 +639,10 @@ void parser::Ast_Node_Variable_Declaration::ignore(Ast* __ast)
 
 
 parser::Ast_Node_Function_Declaration::~Ast_Node_Function_Declaration() 
-    { delete representive_type; delete parameters_type; body->~Ast_Node_Code_Block(); free(body); name_space->~Name_Space(); free(name_space); }
+    { delete representive_type; delete parameters_type; body->~Ast_Node_Code_Block(); free(body); name_space->~Name_Space(); free(name_space); if (this_token_name) this_token_name->~Token(); free(this_token_name); }
 
 parser::Ast_Node_Function_Declaration::Ast_Node_Function_Declaration(Type_Information* __return_type, Token* __function_token_name, Name_Space* __name_space, bool __is_static) 
-    : Ast_Node(AST_NODE_FUNCTION_DECLARATION, __return_type), function_token_name(__function_token_name), name_space(__name_space), is_static(__is_static), body_defined(0), destructor(0) { 
+    : Ast_Node(AST_NODE_FUNCTION_DECLARATION, __return_type), function_token_name(__function_token_name), name_space(__name_space), is_static(__is_static), body_defined(0), destructor(0), this_token_name(0) { 
 
         body = (Ast_Node_Code_Block*) malloc(sizeof(Ast_Node_Code_Block));  new (body) Ast_Node_Code_Block(0, __name_space); 
 
@@ -653,6 +653,15 @@ parser::Ast_Node_Function_Declaration::Ast_Node_Function_Declaration(Type_Inform
 void parser::Ast_Node_Function_Declaration::set_this_variable(Ast* __ast) {
 
     // std::cout << "Setting this variable" << std::endl;
+
+    this_token_name = (Token*) malloc(sizeof(Token));
+
+    new (this_token_name) Token(
+        IDENTIFIER,
+        utils::get_string_copy(
+            (char*) "this"
+        )
+    );
 
     char* _struct_name = __ast->name_space_chain->last->object->path->last->object;
 
@@ -679,9 +688,9 @@ void parser::Ast_Node_Function_Declaration::set_this_variable(Ast* __ast) {
 
     Ast_Node_Variable_Declaration* _variable_declaration_node = (Ast_Node_Variable_Declaration*) malloc(sizeof(Ast_Node_Variable_Declaration));
 
-    new (_variable_declaration_node) Ast_Node_Variable_Declaration( // Add name
+    new (_variable_declaration_node) Ast_Node_Variable_Declaration(
         parameters_type->first->object,
-        0, 0
+        this_token_name, 0
     );
 
     body->code->add(
@@ -1233,11 +1242,7 @@ void parser::Ast_Node_Function_Call::set_function_declaration(Ast* __ast, Name_S
 
     if (__name_space) __ast->add_to_chain(__name_space);
 
-    utils::Linked_List <Type_Information*>* _parameters_type = 
-        new utils::Linked_List <Type_Information*>(0);
-
-    for (int _ = 0; _ < parameters->count; _++) 
-        _parameters_type->add(parameters->operator[](_)->representive_type);
+    utils::Linked_List <Type_Information*>* _parameters_type = get_parameters_type();
 
     function_declaration = 
         get_function_declaration(
@@ -1248,9 +1253,8 @@ void parser::Ast_Node_Function_Call::set_function_declaration(Ast* __ast, Name_S
             __ast->get_token(-1)->id == FUNCTION_OPERATOR_BITWISE_NOT
         );
     
-    if (!function_declaration) throw Undefined_Function_Declaration_Ast(__ast->code_information, __ast->get_token(-1), __backup_state);
-
-    std::cout << "Function declaration body act -> " << function_declaration->body_defined << std::endl;
+    if (!function_declaration) 
+        { delete _parameters_type; throw Undefined_Function_Declaration_Ast(__ast->code_information, __ast->get_token(-1), __backup_state);}
 
     representive_type = function_declaration->representive_type;
 
@@ -1261,6 +1265,19 @@ void parser::Ast_Node_Function_Call::set_function_declaration(Ast* __ast, Name_S
     __ast->print("--> Function Call Set Function Declaration End <--");
 
 }
+
+utils::Linked_List <parser::Type_Information*>* parser::Ast_Node_Function_Call::get_parameters_type() {
+
+    utils::Linked_List <Type_Information*>* _parameters_type = 
+        new utils::Linked_List <Type_Information*>(0);
+
+    for (int _ = 0; _ < parameters->count; _++) 
+        _parameters_type->add(parameters->operator[](_)->representive_type);
+
+    return _parameters_type;
+
+}
+
 
 parser::Ast_Node* parser::Ast_Node_Function_Call::generate_accessing_function_call(Ast* __ast, Ast_Node_Expression* __first_parameter) {
 
@@ -1300,7 +1317,7 @@ parser::Ast_Node* parser::Ast_Node_Function_Call::generate_accessing_function_ca
         _backup_name_space
     );
 
-    _function_call_node->set_function_declaration(__ast, 0, _backup_state, 0);
+    _function_call_node->set_function_declaration(__ast, 0, _backup_state, 0); 
 
     __ast->print("--> Ast Node Function Call Accessing End <--");
 
@@ -1333,13 +1350,26 @@ parser::Ast_Node* parser::Ast_Node_Function_Call::generate(Ast* __ast) {
         _function_token_name
     );
 
+    Ast_Node* _conversion = _function_call_node;
+
     __ast->open_nodes->add(
         _function_call_node, 0
     );
 
     _function_call_node->set_parameters(__ast);
 
-    _function_call_node->set_function_declaration(__ast, _name_space, _backup_state, 1);
+    try { _function_call_node->set_function_declaration(__ast, _name_space, _backup_state, 1); }
+
+    catch(Undefined_Function_Declaration_Ast& __undefined_function_declaration_exception) {
+
+        if (
+            Ast_Node_Struct_Declaration* _struct_declaration_node =
+                get_struct_declaration(__ast, _function_token_name->identifier)
+        ) { _conversion = Ast_Node_Constructor_Call::generate(__ast, _struct_declaration_node, _function_call_node, _backup_state); if (_name_space) __ast->pop_from_chain(); }
+
+        else throw __undefined_function_declaration_exception;
+
+    }
 
     delete __ast->open_nodes->remove(
         __ast->open_nodes->count
@@ -1349,12 +1379,12 @@ parser::Ast_Node* parser::Ast_Node_Function_Call::generate(Ast* __ast) {
 
     try { get_node_type(__ast); }
 
-    catch(...) { return _function_call_node; }
+    catch(...) { return _conversion; }
 
-    return get_node_type(__ast) == AST_NODE_ACCESSING ? (Ast_Node*) Ast_Node_Accessing::generate(__ast, _function_call_node) : (Ast_Node*) _function_call_node;
+    return get_node_type(__ast) == AST_NODE_ACCESSING ? (Ast_Node*) Ast_Node_Accessing::generate(__ast, _conversion) : (Ast_Node*) _conversion;
 
     
-    return _function_call_node;
+    return _conversion;
 
 }
 
@@ -1638,3 +1668,102 @@ parser::Ast_Node_Byte_Code* parser::Ast_Node_Byte_Code::generate(Ast* __ast) {
 
 }
 
+
+
+parser::Ast_Node_Constructor_Call::~Ast_Node_Constructor_Call() { 
+    this_variable->~Ast_Node_Variable_Declaration(); free(this_variable);
+    constructor->~Ast_Node_Function_Call(); free(constructor); 
+    delete representive_type;
+}
+
+parser::Ast_Node_Constructor_Call::Ast_Node_Constructor_Call(Ast_Node_Function_Call* __constructor) 
+    : Ast_Node(AST_NODE_CONSTRUCTOR_CALL, 0), constructor(__constructor) {}
+
+void parser::Ast_Node_Constructor_Call::set_this_variable(Ast* __ast, Ast_Node_Struct_Declaration* __struct_declaration) {
+    
+    Type_Information* _this_variable_type = 
+        new Type_Information(
+            __struct_declaration, 1
+        ); 
+
+    this_variable = (Ast_Node_Variable_Declaration*) malloc(sizeof(Ast_Node_Variable_Declaration));
+
+    new (this_variable) Ast_Node_Variable_Declaration(
+        _this_variable_type, 0, 0
+    );
+
+}
+
+void parser::Ast_Node_Constructor_Call::add_this_variable_to_paremeters(Ast* __ast) {
+
+    Ast_Node_Variable* _variable_node = (Ast_Node_Variable*) malloc(sizeof(Ast_Node_Variable));
+
+    new (_variable_node) Ast_Node_Variable(
+        this_variable, 0
+    );
+
+    Ast_Node_Expression* _expression_this_variable = (Ast_Node_Expression*) malloc(sizeof(Ast_Node_Expression));
+
+    new (_expression_this_variable) Ast_Node_Expression();
+
+    _expression_this_variable->values->add(_variable_node);
+
+    _expression_this_variable->set_representive_type(__ast);
+
+    constructor->parameters->insert(
+        _expression_this_variable, 0
+    );
+
+}
+
+void parser::Ast_Node_Constructor_Call::set_representive_type() {
+
+    representive_type = this_variable->representive_type->get_copy();
+
+    representive_type->pointer_level--;
+
+}
+
+parser::Ast_Node_Constructor_Call* parser::Ast_Node_Constructor_Call::generate(Ast* __ast, Ast_Node_Struct_Declaration* __struct_declaration, Ast_Node_Function_Call* __function_call_node, int __backup_state) {
+
+    __ast->print("--> Ast Node Constructor Call <--");
+
+    __ast->add_to_chain(__struct_declaration->body->name_space);
+
+    Ast_Node_Constructor_Call* _constructor_call_node = (Ast_Node_Constructor_Call*) malloc(sizeof(Ast_Node_Constructor_Call));
+
+    new (_constructor_call_node) Ast_Node_Constructor_Call(
+        __function_call_node
+    );
+
+    __ast->open_nodes->add(
+        _constructor_call_node, 0
+    );
+
+    _constructor_call_node->set_this_variable(__ast, __struct_declaration);
+
+    _constructor_call_node->add_this_variable_to_paremeters(__ast);
+
+    _constructor_call_node->set_representive_type();
+
+    utils::Linked_List <Type_Information*>* _parameters_type = __function_call_node->get_parameters_type();
+
+    if (
+        !get_function_declaration(
+            __ast, __function_call_node->function_token_name->identifier, _parameters_type, 0, 0
+        )
+    ) throw Undefined_Constructor_Declaration_Ast(__ast->code_information, __ast->get_token(-1), __backup_state);
+
+    delete _parameters_type;
+
+    delete __ast->open_nodes->remove(
+        __ast->open_nodes->count
+    );
+
+    __ast->pop_from_chain();
+
+    __ast->print("--> Ast Node Constructor Call End <--");
+
+    return _constructor_call_node;
+
+}

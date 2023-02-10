@@ -3,19 +3,9 @@
 
 #include <iostream>
 
-struct Struct_Ola {
-
-    int marinho;
-
-};
-
-void Struct_Ola() {
-
-}
-
 int main() {
 
-    Struct_Ola::Struct_Ola __ola = Struct_Ola::Struct_Ola();
+    // Struct_Ola __ola = Struct_Ola::Struct_Ola();
 
     // ola.Struct_Ola();
 

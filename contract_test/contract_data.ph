@@ -7,7 +7,9 @@ namespace built_ins {
 
     struct Int {
 
-        int add(int) {}
+        Int(int);
+
+        int add(bool) {}
 
         bool sub(int) {}
 
@@ -35,27 +37,9 @@ int call_func(int*) {
 
 namespace test_1 {
 
-    struct Struct_Test {
-
-        ~Struct_Test();
-        
-        Struct_Test();
-
-        Struct_Test(int);
-
-        Struct_Test* l;
-
-        Struct_Test ola();
-
-    };
-
     bool test_func() {
 
-        Struct_Test _ola;
-
-        _ola.~Struct_Test(12);
-
-
+        1 + ::built_ins::Int(); // Error dont work out side built_ins namespace TODO
 
     }
 

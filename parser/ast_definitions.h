@@ -13,6 +13,7 @@
 #define AST_NODE_PARENTHESIS 10
 #define AST_NODE_ACCESSING 11
 #define AST_NODE_BYTE_CODE 12
+#define AST_NODE_CONSTRUCTOR_CALL 13
 
 
 /* Ast Helper Definitions for get_node_type() */

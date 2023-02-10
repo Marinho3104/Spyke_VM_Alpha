@@ -87,8 +87,8 @@ namespace parser {
     struct Ast_Node_Function_Declaration : Ast_Node {
 
         utils::Linked_List <Type_Information*>* parameters_type;
+        Token* function_token_name, *this_token_name;
         bool is_static, body_defined, destructor;
-        Token* function_token_name;
         Ast_Node_Code_Block* body;
         Name_Space* name_space;
 
@@ -149,6 +149,8 @@ namespace parser {
         void set_parameters(Ast*);
 
         void set_function_declaration(Ast*, Name_Space*, int, bool);
+
+        utils::Linked_List <Type_Information*>* get_parameters_type();
 
         static Ast_Node* generate_accessing_function_call(Ast*, Ast_Node_Expression*);
 
@@ -221,7 +223,18 @@ namespace parser {
 
     struct Ast_Node_Constructor_Call : Ast_Node {
 
-        // TODO
+        Ast_Node_Variable_Declaration* this_variable;
+        Ast_Node_Function_Call* constructor;
+
+        ~Ast_Node_Constructor_Call(); Ast_Node_Constructor_Call(Ast_Node_Function_Call*);
+
+        void set_this_variable(Ast*, Ast_Node_Struct_Declaration*);
+
+        void add_this_variable_to_paremeters(Ast*);
+
+        void set_representive_type();
+
+        static Ast_Node_Constructor_Call* generate(Ast*, Ast_Node_Struct_Declaration*, Ast_Node_Function_Call*, int);
 
     };
 

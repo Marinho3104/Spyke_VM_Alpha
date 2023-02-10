@@ -21,7 +21,7 @@ namespace parser {
         char* identifier;
         Position_Information position_information;
 
-        ~Token(); Token(int, char*, size_t, size_t, size_t); Token(int, char*, Position_Information);
+        ~Token(); Token(int, char*); Token(int, char*, size_t, size_t, size_t); Token(int, char*, Position_Information);
 
         bool operator==(Token*);
 

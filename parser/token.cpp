@@ -11,6 +11,9 @@ parser::Position_Information::Position_Information(size_t __column, size_t __lin
 
 parser::Token::~Token() { free(identifier); }
 
+parser::Token::Token(int __id, char* __identifier) 
+    : id(__id), identifier(__identifier), position_information(Position_Information(0, 0, 0)) {}
+
 parser::Token::Token(int __id, char* __identifier, size_t __collumn, size_t __line, size_t __size) 
     : id(__id), identifier(__identifier), position_information(Position_Information(__collumn, __line, __size)) {}
 

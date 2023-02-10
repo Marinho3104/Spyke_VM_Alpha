@@ -108,6 +108,8 @@ namespace parser {
 
         char* information;
 
+        ~Undefined_Function_Declaration_Ast();
+
         Undefined_Function_Declaration_Ast(Code_Information*, Token*, int);
 
         const char* what() const throw();
@@ -151,6 +153,16 @@ namespace parser {
         ~Struct_Body_Not_Defined_Ast();
 
         Struct_Body_Not_Defined_Ast(Code_Information*, Token*, int);
+
+        const char* what() const throw();
+
+    };
+
+    struct Undefined_Constructor_Declaration_Ast : public std::exception {
+
+        char* information;
+
+        Undefined_Constructor_Declaration_Ast(Code_Information*, Token*, int);
 
         const char* what() const throw();
 
