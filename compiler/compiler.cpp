@@ -7,6 +7,7 @@
 #include "code_information.h"
 #include "pre_compiler.h"
 #include "tokenizer.h"
+#include "convertor.h"
 #include "ast.h"
 
 #include <iostream>
@@ -18,6 +19,7 @@ compiler::Compiler::~Compiler() {
     if (tokenizer) delete tokenizer;
     if (pre_compiler) delete pre_compiler;
     if (ast) delete ast;
+    if (convertor) delete convertor;
     
     free(code);  
     
@@ -64,6 +66,13 @@ void compiler::Compiler::full_compilation() {
         new parser::Ast(
             code_information,
             tokenizer->tokens_collection
+        );
+
+    convertor =
+        new parser::Convertor(
+            code_information,
+            ast->implicit_values,
+            ast->global_name_space
         );
 
 }

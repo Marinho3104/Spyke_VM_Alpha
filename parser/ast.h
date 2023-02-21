@@ -9,10 +9,12 @@ namespace parser {
 
     struct Ast {
 
+        utils::Linked_List <Ast_Node*>* current_nodes;
+
+        utils::Linked_List <Ast_Node*>* open_nodes;
         utils::Linked_List <Name_Space*>* name_space_chain;
         utils::Linked_List <Token*>* tokens_collection;
         utils::Linked_List <Token*>* implicit_values;
-        utils::Linked_List <Ast_Node*>* open_nodes;
         Ast_Node_Name_Space* global_name_space;
         Name_Space_Control* name_space_control;
         Code_Information* code_information;

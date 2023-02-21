@@ -124,13 +124,13 @@
 #define DO 83 // do
 #define BREAK 84 // break
 #define CONTINUE 85 // continue
+#define FOR 86 // for
 
-#define SIZE_OF 86 // sizeof
+#define SIZE_OF 87 // sizeof
 
-#define PRE_COMPILER_DEFINE 87 // #define
-#define PRE_COMPILER_INCLUDE 88 // #include
-#define PRE_COMPILER_IF_DEF 89 // #ifdef
-#define PRE_COMPILER_IF_N_DEF 90 // #ifndef 
-#define PRE_COMPILER_ELSE 91 // #else
-#define PRE_COMPILER_END_IF 92 // #endif
-
+#define PRE_COMPILER_DEFINE 88 // #define
+#define PRE_COMPILER_INCLUDE 89 // #include
+#define PRE_COMPILER_IF_DEF 90 // #ifdef
+#define PRE_COMPILER_IF_N_DEF 91 // #ifndef 
+#define PRE_COMPILER_ELSE 92 // #else
+#define PRE_COMPILER_END_IF 93 // #endif

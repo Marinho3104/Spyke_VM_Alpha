@@ -43,7 +43,7 @@ namespace parser {
 
         ~Ast_Node_Code_Block(); Ast_Node_Code_Block(Ast_Node_Code_Block*, Name_Space*);
 
-        void set_code(Ast*);
+        void set_code(Ast*, bool);
 
         static Ast_Node_Code_Block* generate(Ast*);
 
@@ -57,6 +57,8 @@ namespace parser {
 
         ~Ast_Node_Struct_Declaration(); Ast_Node_Struct_Declaration(Token*, Name_Space*);
 
+        void add_special_function(Ast*, bool);
+
         bool is_pointer_struct_type();
 
         static utils::Linked_List <Ast_Node*>* generate(Ast*);
@@ -67,6 +69,7 @@ namespace parser {
 
     struct Ast_Node_Variable_Declaration : Ast_Node {
 
+        Ast_Node_Constructor_Call* constructor_call; 
         Token* variable_token_name;
         bool is_static;
 
@@ -111,11 +114,13 @@ namespace parser {
         utils::Linked_List <Ast_Node*>* values;
         utils::Linked_List <Token*>* token_ids;
 
-        ~Ast_Node_Expression(); Ast_Node_Expression();
+        ~Ast_Node_Expression(); Ast_Node_Expression(); Ast_Node_Expression(Ast_Node*, Token*); Ast_Node_Expression(Ast_Node*, Ast_Node*, Token*);
 
         void set(Ast*);
 
         void set_representive_type(Ast*);
+
+        static Ast_Node_Expression* generate_single_parameter(Ast*);
 
         static Ast_Node_Expression* generate(Ast*);
 
@@ -148,7 +153,7 @@ namespace parser {
 
         void set_parameters(Ast*);
 
-        void set_function_declaration(Ast*, Name_Space*, int, bool);
+        void set_function_declaration(Ast*, Name_Space*, int, bool, bool);
 
         utils::Linked_List <Type_Information*>* get_parameters_type();
 
@@ -225,18 +230,157 @@ namespace parser {
 
         Ast_Node_Variable_Declaration* this_variable;
         Ast_Node_Function_Call* constructor;
+        bool delete_this_variable;
+        char* search_name;
 
-        ~Ast_Node_Constructor_Call(); Ast_Node_Constructor_Call(Ast_Node_Function_Call*);
+        ~Ast_Node_Constructor_Call(); Ast_Node_Constructor_Call(Type_Information*, char*);
 
-        void set_this_variable(Ast*, Ast_Node_Struct_Declaration*);
+        void set_add_this_variable(Ast*);
 
-        void add_this_variable_to_paremeters(Ast*);
+        void set_add_this_variable(Ast*, Ast_Node_Variable_Declaration*);
 
-        void set_representive_type();
+        static Ast_Node_Constructor_Call* generate(Ast*);
 
-        static Ast_Node_Constructor_Call* generate(Ast*, Ast_Node_Struct_Declaration*, Ast_Node_Function_Call*, int);
+        static Ast_Node_Constructor_Call* generate(Ast*, Type_Information*, Ast_Node*);
+
+        static void set_variable_declaration_constructor(Ast*, Ast_Node_Expression*);
 
     };
+
+    struct Ast_Node_Cast : Ast_Node {
+
+        Ast_Node_Constructor_Call* constructor_call;
+        Type_Information* cast_to_type;
+        Ast_Node* value;
+
+        ~Ast_Node_Cast(); Ast_Node_Cast(Type_Information*);
+
+        void set_constructor(Ast*, int);
+
+        void set_value(Ast*);
+
+        static Ast_Node_Cast* generate(Ast*);
+
+    };
+
+    struct Ast_Node_Return_Key_Word : Ast_Node {
+
+        Ast_Node_Expression* expression;
+
+        ~Ast_Node_Return_Key_Word(); Ast_Node_Return_Key_Word();
+
+        void confirm_return_type(Ast*, int);
+
+        void set_expression(Ast*);
+
+        static Ast_Node_Return_Key_Word* generate(Ast*);
+
+    };
+
+    struct Ast_Node_While : Ast_Node {
+
+        Ast_Node_Variable_Declaration* condition;
+        Ast_Node_Code_Block* body;
+
+        ~Ast_Node_While(); Ast_Node_While(Ast_Node_Code_Block*);
+
+        void set_condition(Ast*);
+
+        void set_body(Ast*); 
+
+        static Ast_Node_While* generate(Ast*);
+
+    };
+
+    struct Ast_Node_Do_While : Ast_Node {
+
+        Ast_Node_Variable_Declaration* condition;
+        Ast_Node_Code_Block* body;
+
+        ~Ast_Node_Do_While(); Ast_Node_Do_While(Ast_Node_Code_Block*);
+
+        void set_condition(Ast*);
+
+        void set_body(Ast*); 
+
+        static Ast_Node_Do_While* generate(Ast*);
+
+    };
+
+    struct Ast_Node_If : Ast_Node {
+
+        Ast_Node_Variable_Declaration* condition;
+        Ast_Node_Code_Block* body;
+
+        ~Ast_Node_If(); Ast_Node_If(Ast_Node_Code_Block*);
+
+        void set_condition(Ast*);
+
+        void set_body(Ast*); 
+
+        static Ast_Node_If* generate(Ast*);
+
+    };
+
+    struct Ast_Node_Else_If : Ast_Node {
+
+        Ast_Node_Variable_Declaration* condition;
+        Ast_Node_Code_Block* body;
+
+        ~Ast_Node_Else_If(); Ast_Node_Else_If(Ast_Node_Code_Block*);
+
+        void set_condition(Ast*);
+
+        void set_body(Ast*); 
+
+        static Ast_Node_Else_If* generate(Ast*);
+
+    };
+
+    struct Ast_Node_Else : Ast_Node {
+
+        Ast_Node_Code_Block* body;
+
+        ~Ast_Node_Else(); Ast_Node_Else(Ast_Node_Code_Block*);
+
+        void set_body(Ast*); 
+
+        static Ast_Node_Else* generate(Ast*);
+
+    };
+
+    struct Ast_Node_For : Ast_Node {
+
+        utils::Linked_List <Ast_Node*>* variable_declarations;
+        utils::Linked_List <Ast_Node_Expression*>* execution;
+        Ast_Node_Variable_Declaration* condition;
+        Ast_Node_Code_Block* body;
+
+        ~Ast_Node_For(); Ast_Node_For(Ast_Node_Code_Block*);
+
+        void set_variable_declarations(Ast*);
+        
+        void set_condition(Ast*);
+
+        void set_execution(Ast*);
+
+        void set_body(Ast*);
+
+        static Ast_Node_For* generate(Ast*);
+
+    };
+
+    struct Ast_Node_Control_Structs_Key_Words : Ast_Node {
+
+        Ast_Node* control_struct;
+        char key_word_id;
+
+        ~Ast_Node_Control_Structs_Key_Words(); Ast_Node_Control_Structs_Key_Words(Ast_Node*, char);
+
+        static Ast_Node_Control_Structs_Key_Words* generate(Ast*); 
+
+    };
+
 
 }
 

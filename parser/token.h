@@ -35,6 +35,8 @@ namespace parser {
 
     bool is_implicit_value_type(int);
 
+    bool is_single_parameters_function_operation(int);
+
     int get_primitive_type_of_implicit_value_type(int);
 
 }

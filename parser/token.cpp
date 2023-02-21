@@ -57,6 +57,16 @@ bool parser::is_primitive_type(int __token_id) { return __token_id >= PRIMITIVE_
 
 bool parser::is_implicit_value_type(int __token_id) { return __token_id >= IMPLICIT_VALUE_INT && __token_id <= IMPLICIT_VALUE_STRING; }
 
+bool parser::is_single_parameters_function_operation(int __token_id) { 
+    
+    return (
+        (__token_id >= FUNCTION_OPERATOR_INCREMENT && __token_id <= FUNCTION_OPERATOR_DECREMENT_LEFT) || 
+        __token_id == FUNCTION_OPERATOR_NOT || 
+        __token_id == FUNCTION_OPERATOR_BITWISE_NOT
+    ); 
+    
+}
+
 int parser::get_primitive_type_of_implicit_value_type(int __implicit_value_type) {
 
     switch (__implicit_value_type)

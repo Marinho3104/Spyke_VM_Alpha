@@ -1,4 +1,5 @@
 
+byte_code_path := ./byte_code/
 built_ins_path := ./built_ins/
 compiler_path := ./compiler/
 entry_point_path := ./test/
@@ -10,6 +11,7 @@ output_name := ./output
 all:
 
 	$(MAKE) -C $(entry_point_path)
+	$(MAKE) -C $(byte_code_path)
 	$(MAKE) -C $(built_ins_path)
 	$(MAKE) -C $(compiler_path)
 	$(MAKE) -C $(parser_path)

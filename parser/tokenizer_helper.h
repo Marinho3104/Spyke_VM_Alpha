@@ -15,6 +15,8 @@ namespace parser {
 
     bool only_digist(char*);
 
+    bool only_underscore(char*);
+
     long get_long_from_string(char*, Tokenizer*);
 
     bool is_int(char*, Tokenizer*);

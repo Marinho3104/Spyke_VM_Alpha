@@ -28,14 +28,22 @@ parser::Ast_Node_Struct_Declaration* parser::Declaration_Tracker::get_struct_dec
 
     if (!__struct_name) return 0;
 
+    Ast_Node_Struct_Declaration* _struct_declaration = 0;
+
     for (int _ = 0; _ < struct_declarations->count; _++)
 
         if (
             struct_declarations->operator[](_)->struct_token_name && 
-            !strcmp(struct_declarations->operator[](_)->struct_token_name->identifier, __struct_name)
+            !strcmp(struct_declarations->operator[](_)->struct_token_name->identifier, __struct_name) &&
+            struct_declarations->operator[](_)->body_defined
         ) return struct_declarations->operator[](_);
 
-    return 0;
+        else if (
+            struct_declarations->operator[](_)->struct_token_name && 
+            !strcmp(struct_declarations->operator[](_)->struct_token_name->identifier, __struct_name)
+        ) _struct_declaration = struct_declarations->operator[](_);
+
+    return _struct_declaration;
 
 }
 
@@ -57,9 +65,13 @@ parser::Ast_Node_Variable_Declaration* parser::Declaration_Tracker::get_variable
 parser::Ast_Node_Function_Declaration* parser::Declaration_Tracker::get_function_declaration(
     char* __function_name, utils::Linked_List <Type_Information*>* __parameters_types, bool __is_static, bool __destructor) {
 
-        Ast_Node_Function_Declaration* _function_declaration;
+        // std::cout << "Get Function Declaration" << std::endl;
 
-        for (int _ = 0; _ < function_declarations->count; _++)
+        // std::cout << "Function Name -> " << __function_name << std::endl;
+
+        Ast_Node_Function_Declaration* _function_declaration = 0;
+
+        for (int _ = 0; _ < function_declarations->count; _++) {
 
             if (
                 function_declarations->operator[](_)->function_token_name && 
@@ -89,6 +101,8 @@ parser::Ast_Node_Function_Declaration* parser::Declaration_Tracker::get_function
                 if (_function_declaration) return _function_declaration;
 
             }
+
+        }
 
         return 0;
 
@@ -530,13 +544,38 @@ int parser::get_node_type(Ast* __ast) {
         case FUNCTION_OPERATOR_BITWISE_NOT: return AST_BITWISE_NOT; break;
 
         // Ast Nodes
+        case IF: return AST_NODE_IF; break;
+        case FOR: return AST_NODE_FOR; break;
+        case ELSE: return AST_NODE_ELSE; break;
+        case WHILE: return AST_NODE_WHILE; break;
+        case DO: return AST_NODE_DO_WHILE; break;
         case EXEC: return AST_NODE_BYTE_CODE; break;
+        case ELSE_IF: return AST_NODE_ELSE_IF; break;
         case NAMESPACE: return AST_NODE_NAME_SPACE; break;
         case OPEN_BRACES: return AST_NODE_CODE_BLOCK; break;
+        case RETURN: return AST_NODE_RETURN_KEY_WORD; break;
         case STRUCT: return AST_NODE_STRUCT_DECLARATION; break;
-        case OPEN_PARENTHESIS: return AST_NODE_PARENTHESIS; break;
+        case OPEN_PARENTHESIS: 
+        
+            {
+
+                __ast->tokens_position++;
+                
+                try { delete Type_Information::generate(__ast, 1); }
+
+                catch(...) { __ast->tokens_position = _backup_state; return AST_NODE_PARENTHESIS; }
+
+                int _node_type = __ast->get_token(0)->id == CLOSE_PARENTHESIS ? AST_NODE_CAST : AST_NODE_PARENTHESIS;
+
+                __ast->tokens_position = _backup_state;
+
+                return  _node_type; break;
+                
+            }
+        
         case POINTER: case ADDRESS: return AST_NODE_POINTER_OPERATION; break;
         case ACCESSING: case ACCESSING_POINTER: return AST_NODE_ACCESSING; break;
+        case CONTINUE: case BREAK: return AST_NODE_CONTROL_STRUCTS_KEY_WORD; break;
 
         // No Return
         case STATIC: __ast->tokens_position++; break;
@@ -564,7 +603,7 @@ int parser::get_node_type(Ast* __ast) {
 
         }
 
-        if (__ast->get_token(0)->id == OPEN_PARENTHESIS) { __ast->tokens_position = _backup_state; return AST_NODE_FUNCTION_CALL; }
+        if (__ast->get_token(0)->id == OPEN_PARENTHESIS) { __ast->tokens_position = _backup_state; return AST_NODE_CONSTRUCTOR_CALL; }
 
         get_name_space_by_path(__ast);
 
@@ -577,6 +616,8 @@ int parser::get_node_type(Ast* __ast) {
     }
 
     else if (is_implicit_value_type(__ast->get_token(0)->id)) return AST_NODE_IMPLICIT_VALUE;
+
+    else if (is_single_parameters_function_operation(__ast->get_token(0)->id)) return AST_NODE_EXPRESSION;
 
     throw Unexpected_Token_Ast(__ast->code_information, __ast->get_token(0));
 
@@ -827,5 +868,34 @@ parser::Ast_Node_Code_Block* parser::get_code_block_node(Ast* __ast, Name_Space*
 
 }
 
+parser::Ast_Node_Variable_Declaration* parser::get_condition(Ast* __ast) {
 
+    Ast_Node_Expression* _expression_condition = 
+        Ast_Node_Expression::generate(__ast);
+
+    Ast_Node_Variable_Declaration* _variable_declaration =
+        (Ast_Node_Variable_Declaration*) malloc(sizeof(Ast_Node_Variable_Declaration));
+
+    new (_variable_declaration) Ast_Node_Variable_Declaration(
+        Type_Information::generate_primitive_type(__ast, PRIMITIVE_TYPE_BOOL),
+        0, 0
+    );
+
+    __ast->open_nodes->add(
+        _variable_declaration, 0
+    );
+
+    Ast_Node_Constructor_Call::set_variable_declaration_constructor(
+        __ast, _expression_condition
+    );
+
+    delete __ast->open_nodes->remove(
+        __ast->open_nodes->count
+    );
+
+    return _variable_declaration;
+
+}
+
+bool parser::is_control_struct(int __node_id) { return __node_id == AST_NODE_WHILE || __node_id == AST_NODE_DO_WHILE || __node_id == AST_NODE_FOR; }
 

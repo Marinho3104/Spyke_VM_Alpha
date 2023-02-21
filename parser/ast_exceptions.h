@@ -168,6 +168,46 @@ namespace parser {
 
     };
 
+    struct Default_Constructor_Undefined_Declaration_Ast : public std::exception {
+
+        char* information;
+
+        Default_Constructor_Undefined_Declaration_Ast(Code_Information*, Token*);
+
+        const char* what() const throw();
+
+    };
+
+    struct Constructor_With_Given_Parameters_Undefined_Declaration_Ast : public std::exception {
+
+        char* information;
+
+        Constructor_With_Given_Parameters_Undefined_Declaration_Ast(Code_Information*, Token*);
+
+        const char* what() const throw();
+
+    };
+
+    struct Function_Return_And_Given_Return_Not_The_Same : public std::exception {
+
+        char* information;
+
+        Function_Return_And_Given_Return_Not_The_Same(Code_Information*, Token*, int);
+
+        const char* what() const throw();
+
+    };
+
+    struct Control_Struct_Key_Word_Out_Of_Control_Struct : public std::exception {
+
+        char* information;
+
+        Control_Struct_Key_Word_Out_Of_Control_Struct(Code_Information*, Token*);
+
+        const char* what() const throw();
+
+    };
+
 }
 
 #endif

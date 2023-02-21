@@ -110,6 +110,7 @@ int parser::get_token_keyword_id(const char*& __current_position, int __last_tok
     if (!strncmp(__current_position, "static", 6)) { __current_position += 6; return STATIC; }
     if (!strncmp(__current_position, "exec", 4)) { __current_position += 4; return EXEC; }
     if (!strncmp(__current_position, "return", 6)) { __current_position += 6; return RETURN; }
+    if (!strncmp(__current_position, "for", 3)) { __current_position += 3; return FOR; }
 
     if (__last_toke_id == PRE_COMPILER && !strncmp(__current_position, "define", 6)) { __current_position += 6; return PRE_COMPILER_DEFINE; }
     if (__last_toke_id == PRE_COMPILER && !strncmp(__current_position, "include", 7)) { __current_position += 7; return PRE_COMPILER_INCLUDE; }
@@ -146,6 +147,21 @@ bool parser::only_digist(char* __str) {
 
 }
 
+bool parser::only_underscore(char* __str) {
+
+    while(*__str) {
+
+        if (*__str != 95) return 0;
+
+        __str++;
+
+    }
+
+    return 1;
+
+}
+
+
 long parser::get_long_from_string(char* __str, Tokenizer* __tokenizer) {
 
     long _value = 0;
@@ -163,7 +179,7 @@ long parser::get_long_from_string(char* __str, Tokenizer* __tokenizer) {
 
 }
 
-bool parser::is_int(char* __is_int, Tokenizer* __tokenizer) { return only_digist(__is_int) && get_long_from_string(__is_int, __tokenizer) <= INT_MAX; }
+bool parser::is_int(char* __is_int, Tokenizer* __tokenizer) { return !only_underscore(__is_int) && only_digist(__is_int) && get_long_from_string(__is_int, __tokenizer) <= INT_MAX; }
 
 
 

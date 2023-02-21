@@ -33,6 +33,20 @@ char* built_ins::get_struct_function_name_of_operation_id(int __operation_id) {
     {
     case FUNCTION_OPERATOR_PLUS: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_PLUS_FUNCTION_NAME ); break;
     case FUNCTION_OPERATOR_MINUS: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_MINUS_FUNCTION_NAME ); break;
+
+    case FUNCTION_OPERATOR_INCREMENT: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_INCREMENT_FUNCTION_NAME ); break;
+    case FUNCTION_OPERATOR_DECREMENT: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_DECREMENT_FUNCTION_NAME ); break;
+
+    case FUNCTION_OPERATOR_INCREMENT_LEFT: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_INCREMENT_LEFT_FUNCTION_NAME ); break;
+    case FUNCTION_OPERATOR_DECREMENT_LEFT: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_DECREMENT_LEFT_FUNCTION_NAME ); break;
+
+    case FUNCTION_OPERATOR_BRACKET: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_BRACKET_FUNCTION_NAME ); break;
+
+    case FUNCTION_OPERATOR_NOT: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_NOT_FUNCTION_NAME ); break;
+
+    case FUNCTION_OPERATOR_EQUAL_TO: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_EQUAL_TO_NAME ); break;
+    case FUNCTION_OPERATOR_NOT_EQUAL_TO: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_NOT_EQUAL_TO_NAME ); break;
+    
     default: break;
     }
 

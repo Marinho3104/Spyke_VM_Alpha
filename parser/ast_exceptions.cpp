@@ -478,3 +478,108 @@ parser::Undefined_Constructor_Declaration_Ast::Undefined_Constructor_Declaration
 
 const char* parser::Undefined_Constructor_Declaration_Ast::what() const throw() { return (const char*) information; }
 
+
+parser::Default_Constructor_Undefined_Declaration_Ast::Default_Constructor_Undefined_Declaration_Ast(Code_Information* __code_information, Token* __token) {
+
+    char* _inicial_line = 
+        __code_information->get_line(__token->position_information.line);
+
+    char* _error_sign = 
+        __code_information->get_line_error_sign(__token->position_information.line, __token->position_information.column, __token->position_information.size);
+
+    asprintf(
+        &information,
+        "\n\n" \
+        "\tDefault Constructor Undefined: \n\n" \
+        "\t\t%s\n" \
+        "\t\t%s\n",
+        _inicial_line,
+        _error_sign
+    ); 
+
+    free(_inicial_line); free(_error_sign);
+
+}
+
+const char* parser::Default_Constructor_Undefined_Declaration_Ast::what() const throw() { return (const char*) information; }
+
+
+parser::Constructor_With_Given_Parameters_Undefined_Declaration_Ast::Constructor_With_Given_Parameters_Undefined_Declaration_Ast(Code_Information* __code_information, Token* __token) {
+
+
+    char* _inicial_line = 
+        __code_information->get_line(__token->position_information.line);
+
+    char* _error_sign = 
+        __code_information->get_line_error_sign(__token->position_information.line, __token->position_information.column, __token->position_information.size);
+
+    asprintf(
+        &information,
+        "\n\n" \
+        "\tConstructor With Given Parameters Is Undefined: \n\n" \
+        "\t\t%s\n" \
+        "\t\t%s\n",
+        _inicial_line,
+        _error_sign
+    ); 
+
+    free(_inicial_line); free(_error_sign);
+
+}
+
+const char* parser::Constructor_With_Given_Parameters_Undefined_Declaration_Ast::what() const throw() { return (const char*) information; }
+
+
+parser::Function_Return_And_Given_Return_Not_The_Same::Function_Return_And_Given_Return_Not_The_Same(Code_Information* __code_information, Token* __token, int __inicial_position) {
+
+
+    char* _inicial_line = 
+        __code_information->get_line(__token->position_information.line);
+
+    char* _error_sign = 
+        __code_information->get_line_error_sign(
+            __token->position_information.line, 
+            __inicial_position, 
+            __token->position_information.size + __token->position_information.column - __inicial_position
+        );
+
+    asprintf(
+        &information,
+        "\n\n" \
+        "\tFunction Declaration Return And Given Return Not The Same:\n\n" \
+        "\t\t%s\n" \
+        "\t\t%s\n",
+        _inicial_line,
+        _error_sign
+    ); 
+
+    free(_inicial_line); free(_error_sign);
+
+}
+
+const char* parser::Function_Return_And_Given_Return_Not_The_Same::what() const throw() { return (const char*) information; }
+
+
+parser::Control_Struct_Key_Word_Out_Of_Control_Struct::Control_Struct_Key_Word_Out_Of_Control_Struct(Code_Information* __code_information, Token* __token) {
+
+    char* _inicial_line = 
+        __code_information->get_line(__token->position_information.line);
+
+    char* _error_sign = 
+        __code_information->get_line_error_sign(__token->position_information.line, __token->position_information.column, __token->position_information.size);
+
+    asprintf(
+        &information,
+        "\n\n" \
+        "\tControl Struct Key Word Used Of Of Control Struct: \n\n" \
+        "\t\t%s\n" \
+        "\t\t%s\n",
+        _inicial_line,
+        _error_sign
+    ); 
+
+    free(_inicial_line); free(_error_sign);
+
+}
+
+const char* parser::Control_Struct_Key_Word_Out_Of_Control_Struct::what() const throw() { return (const char*) information; }

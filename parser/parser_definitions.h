@@ -40,10 +40,22 @@ namespace parser {
     struct Ast_Node_Struct_Declaration;
     struct Ast_Node_Variable_Declaration;
     struct Ast_Node_Function_Declaration;
+    struct Ast_Node_Constructor_Call;
 
     // Ast Helper
     struct Type_Information;
 
+
+}
+
+/* Byte Code */
+namespace byte_code {
+
+    // Byte Code
+    struct Byte_Code;
+
+    // Byte Code Block
+    struct Byte_Code_Block;
 
 }
 

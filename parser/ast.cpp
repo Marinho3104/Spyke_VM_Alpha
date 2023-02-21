@@ -16,7 +16,7 @@ parser::Ast::~Ast() {
 
     delete name_space_control; 
 
-    std::cout << "Name Space Count -> " << name_space_chain->count << std::endl;
+    // std::cout << "Name Space Count -> " << name_space_chain->count << std::endl;
     delete name_space_chain;
     delete implicit_values;
 
@@ -40,7 +40,7 @@ parser::Ast::Ast(Code_Information* __code_information, utils::Linked_List <Token
 
 void parser::Ast::print(const char* __information) {
 
-    if (0) return;
+    if (1) return;
 
     for (int _  = 0; _ < open_nodes->count + 1; _++) std::cout << "\t";
 

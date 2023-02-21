@@ -14,7 +14,15 @@
 #define AST_NODE_ACCESSING 11
 #define AST_NODE_BYTE_CODE 12
 #define AST_NODE_CONSTRUCTOR_CALL 13
-
+#define AST_NODE_CAST 14
+#define AST_NODE_RETURN_KEY_WORD 15
+#define AST_NODE_WHILE 16
+#define AST_NODE_DO_WHILE 17
+#define AST_NODE_IF 18
+#define AST_NODE_ELSE_IF 19
+#define AST_NODE_ELSE 20
+#define AST_NODE_FOR 21
+#define AST_NODE_CONTROL_STRUCTS_KEY_WORD 22
 
 /* Ast Helper Definitions for get_node_type() */
 

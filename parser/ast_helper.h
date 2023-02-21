@@ -82,7 +82,6 @@ namespace parser {
 
     };
 
-
     int get_node_type(Ast*);
 
     utils::Linked_List <char*>* get_path(Ast*);
@@ -100,6 +99,10 @@ namespace parser {
     Ast_Node_Struct_Declaration* get_struct_declaration(Ast*, char*);
 
     Ast_Node_Code_Block* get_code_block_node(Ast*, Name_Space*);
+
+    Ast_Node_Variable_Declaration* get_condition(Ast*);
+
+    bool is_control_struct(int);
 
 }
 
