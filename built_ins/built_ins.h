@@ -9,6 +9,8 @@ namespace built_ins {
 
     char* get_struct_function_name_of_operation_id(int);
 
+    int get_primitive_type_size(char*);
+
 }
 
 #endif

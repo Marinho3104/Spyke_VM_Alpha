@@ -1,0 +1,14 @@
+
+
+#define STACK_MEMORY_ALLOCATION 0
+#define HEAP_MEMORY_ALLOCATION 1
+
+#define LOAD 2
+#define LOAD_GLOBAL 3
+
+#define CALL 4
+
+#define SET_ADDRESS_INTO_STACK 5
+#define GET_ADDRESS_FROM_STACK 6
+
+

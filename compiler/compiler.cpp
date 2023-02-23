@@ -8,6 +8,7 @@
 #include "pre_compiler.h"
 #include "tokenizer.h"
 #include "convertor.h"
+#include "byte_code.h"
 #include "ast.h"
 
 #include <iostream>
@@ -74,6 +75,13 @@ void compiler::Compiler::full_compilation() {
             ast->implicit_values,
             ast->global_name_space
         );
+
+    byte_code::Compiled_Byte_Code* _compiled_byte_code =
+        convertor->get_compiled_byte_code();
+
+    _compiled_byte_code->print();
+
+    delete _compiled_byte_code;
 
 }
 

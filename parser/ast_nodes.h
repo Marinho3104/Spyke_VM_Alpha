@@ -61,6 +61,8 @@ namespace parser {
 
         bool is_pointer_struct_type();
 
+        int get_size();
+
         static utils::Linked_List <Ast_Node*>* generate(Ast*);
 
         static utils::Linked_List <Ast_Node*>* generate_variable_declarations(Ast*, Ast_Node_Struct_Declaration*);
@@ -72,6 +74,8 @@ namespace parser {
         Ast_Node_Constructor_Call* constructor_call; 
         Token* variable_token_name;
         bool is_static;
+
+        int stack_position;
 
         ~Ast_Node_Variable_Declaration(); Ast_Node_Variable_Declaration(Type_Information*, Token*, bool);
 
@@ -91,9 +95,12 @@ namespace parser {
 
         utils::Linked_List <Type_Information*>* parameters_type;
         Token* function_token_name, *this_token_name;
+        utils::Linked_List <Ast_Node*>* parameters;
         bool is_static, body_defined, destructor;
         Ast_Node_Code_Block* body;
         Name_Space* name_space;
+
+        int body_position;
 
         ~Ast_Node_Function_Declaration(); Ast_Node_Function_Declaration(Type_Information*, Token*, Name_Space*, bool);
 
@@ -113,6 +120,9 @@ namespace parser {
 
         utils::Linked_List <Ast_Node*>* values;
         utils::Linked_List <Token*>* token_ids;
+
+        Ast_Node* expression_instructions;
+        bool destroy_expression_instructions;
 
         ~Ast_Node_Expression(); Ast_Node_Expression(); Ast_Node_Expression(Ast_Node*, Token*); Ast_Node_Expression(Ast_Node*, Ast_Node*, Token*);
 
@@ -178,6 +188,8 @@ namespace parser {
         utils::Linked_List <Token*>* pointer_operations;
         int pointer_level;
         Ast_Node* value;
+
+        bool destroy_value;
 
         ~Ast_Node_Pointer_Operation(); Ast_Node_Pointer_Operation(utils::Linked_List <Token*>*, int);
 

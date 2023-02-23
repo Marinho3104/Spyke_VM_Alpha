@@ -25,10 +25,6 @@ struct Test_Struct {
 
 int main() {
 
-    for (int _ = 0; _ < 10 ; _++ ) {
-        
-    }
-
     compiler::Compiler* _compiler = new compiler::Compiler("./contract_test/contract_data.ph", COMPILER_MODE_FULL_COMPILATION);
 
     delete _compiler;

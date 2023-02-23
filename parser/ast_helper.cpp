@@ -1,5 +1,6 @@
 #include "ast_helper.h"
 
+#include "built_ins_definitions.h"
 #include "token_definitions.h"
 #include "ast_definitions.h"
 #include "ast_exceptions.h"
@@ -247,7 +248,7 @@ utils::Linked_List <char*>* parser::Name_Space_Control::get_built_ins_path() {
 
 
 
-
+ 
 parser::Type_Information::~Type_Information() {}
 
 parser::Type_Information::Type_Information(Ast_Node_Struct_Declaration* __declaration_node, int __pointer_level) 
@@ -288,6 +289,14 @@ parser::Type_Information* parser::Type_Information::get_copy() {
         new Type_Information(
             declaration, pointer_level
         );
+
+}
+
+int parser::Type_Information::get_size() {
+
+    if (pointer_level) return PRIMITIVE_TYPE_POINTER_SIZE;
+
+    return declaration->get_size();
 
 }
 

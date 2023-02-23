@@ -5,6 +5,7 @@
 #include "common.h"
 
 #include <iostream>
+#include <string.h>
 
 char* built_ins::get_struct_name_of_primitive_type(int __token_id) {
 
@@ -53,6 +54,20 @@ char* built_ins::get_struct_function_name_of_operation_id(int __operation_id) {
     return _function_name;
 
 }
+
+int built_ins::get_primitive_type_size(char* __type_name) {
+
+    if (!strcmp(PRIMITIVE_TYPE_VOID_NAME, __type_name)) return PRIMITIVE_TYPE_VOID_SIZE;
+    if (!strcmp(PRIMITIVE_TYPE_BYTE_NAME, __type_name)) return PRIMITIVE_TYPE_BYTE_SIZE;
+    if (!strcmp(PRIMITIVE_TYPE_INT_NAME, __type_name)) return PRIMITIVE_TYPE_INT_SIZE;
+    if (!strcmp(PRIMITIVE_TYPE_BOOL_NAME, __type_name)) return PRIMITIVE_TYPE_BOOL_SIZE;
+    if (!strcmp(PRIMITIVE_TYPE_SPYKE_NAME, __type_name)) return PRIMITIVE_TYPE_SPYKE_SIZE;
+    if (!strcmp(PRIMITIVE_TYPE_POINTER_NAME, __type_name)) return PRIMITIVE_TYPE_POINTER_SIZE;
+
+    return -1;
+
+}
+
 
 
 

@@ -3,11 +3,17 @@ namespace built_ins {
 
     struct Void;
 
-    struct Int;
-
     struct Int {
 
-        Int();
+        ~Int() {
+            
+        }
+
+        Int() {
+            
+        }
+
+        // int add(int);
 
     };
 
@@ -15,9 +21,13 @@ namespace built_ins {
 
 int m;
 
-
 namespace test {
 
-    
+    void hh() {
+
+        int(); // not working
+
+    }
+
 
 }

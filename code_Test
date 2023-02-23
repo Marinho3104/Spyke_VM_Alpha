@@ -1,0 +1,56 @@
+
+    struct Void {};
+
+    struct Bool {
+
+        Bool(bool);
+
+        Bool();
+
+        void test_func_bo();
+
+    };
+
+    struct Int {
+
+        ~Int();
+
+        Int();
+
+        Int(int);
+
+        Int(bool);
+
+        int add(int) {}
+
+        int sub(int) {}
+
+        int not() {}
+
+        int increment() {}
+
+        // int increment_left() {}
+        
+        int decrement_left() {}
+
+        int bracket(int);
+
+        bool equal_to(int);
+
+        void test_func();
+
+    };
+
+    struct Pointer {
+
+        Pointer();
+
+        Pointer(bool);
+
+        // int add(int) {}
+
+        int add(int, int) {}
+
+        int testing_function_hello(int);
+
+    };

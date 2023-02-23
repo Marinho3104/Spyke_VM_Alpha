@@ -70,6 +70,8 @@ namespace parser {
 
         Type_Information* get_copy();
 
+        int get_size();
+
         static Type_Information* generate(Ast*, bool);
 
         static Type_Information* generate_confirm_body(Ast*, bool);

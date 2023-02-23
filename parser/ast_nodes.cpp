@@ -385,6 +385,44 @@ bool parser::Ast_Node_Struct_Declaration::is_pointer_struct_type() {
 
 }
 
+int parser::Ast_Node_Struct_Declaration::get_size() {
+
+    int _size = 
+        built_ins::get_primitive_type_size(
+            struct_token_name->identifier
+        );
+
+    utils::Linked_List <char*>* _built_ins_path =
+        Name_Space_Control::get_built_ins_path();
+
+    body->name_space->path->count--;
+
+    bool _path_confirmation =
+        body->name_space->path->operator==(
+            _built_ins_path
+        );
+
+    body->name_space->path->count++;
+
+    delete _built_ins_path;
+
+    if (_size != -1 && _path_confirmation) return _size;
+
+    _size = 0;
+
+    for (int _ = 0; _ < body->declarations->count; _++) 
+
+        if (
+            body->declarations->operator[](_)->node_type == AST_NODE_VARIABLE_DECLARATION
+        ) 
+            _size += (
+                (Ast_Node_Variable_Declaration*) body->declarations->operator[](_)
+            )->representive_type->declaration->get_size();
+
+    return _size;
+
+}
+
 utils::Linked_List <parser::Ast_Node*>*  parser::Ast_Node_Struct_Declaration::generate(Ast* __ast) {
 
     __ast->print("--> Ast Node Struct Declaration <---");
@@ -755,14 +793,16 @@ void parser::Ast_Node_Variable_Declaration::ignore(Ast* __ast)
 
 
 parser::Ast_Node_Function_Declaration::~Ast_Node_Function_Declaration() 
-    { delete representive_type; delete parameters_type; body->~Ast_Node_Code_Block(); free(body); name_space->~Name_Space(); free(name_space); if (this_token_name) this_token_name->~Token(); free(this_token_name); }
+    { delete representive_type; delete parameters_type; body->~Ast_Node_Code_Block(); free(body); name_space->~Name_Space(); free(name_space); if (this_token_name) this_token_name->~Token(); free(this_token_name); delete parameters; }
 
-parser::Ast_Node_Function_Declaration::Ast_Node_Function_Declaration(Type_Information* __return_type, Token* __function_token_name, Name_Space* __name_space, bool __is_static) 
-    : Ast_Node(AST_NODE_FUNCTION_DECLARATION, __return_type), function_token_name(__function_token_name), name_space(__name_space), is_static(__is_static), body_defined(0), destructor(0), this_token_name(0) { 
+parser::Ast_Node_Function_Declaration::Ast_Node_Function_Declaration(Type_Information* __return_type, Token* __function_token_name, Name_Space* __name_space, bool __is_static)  
+    : Ast_Node(AST_NODE_FUNCTION_DECLARATION, __return_type), function_token_name(__function_token_name), name_space(__name_space), is_static(__is_static), body_defined(0), destructor(0), this_token_name(0), body_position(-1) { 
 
         body = (Ast_Node_Code_Block*) malloc(sizeof(Ast_Node_Code_Block));  new (body) Ast_Node_Code_Block(0, __name_space); 
 
         parameters_type = new utils::Linked_List <Type_Information*>(0);
+
+        parameters = new utils::Linked_List <Ast_Node*>();
 
     }
 
@@ -809,7 +849,7 @@ void parser::Ast_Node_Function_Declaration::set_this_variable(Ast* __ast) {
         this_token_name, 0
     );
 
-    body->code->add(
+    parameters->add(
         _variable_declaration_node
     );
 
@@ -834,7 +874,7 @@ void parser::Ast_Node_Function_Declaration::set_parameters(Ast* __ast) {
 
     __ast->pop_from_chain();
 
-    body->code->join(_parameters);
+    parameters->join(_parameters);
 
     for (int _ = 0; _ < _parameters->count; _++) 
 
@@ -1079,15 +1119,22 @@ void parser::Ast_Node_Function_Declaration::ignore(Ast* __ast) {
 }
 
 
-parser::Ast_Node_Expression::~Ast_Node_Expression() { delete values; delete token_ids; }
+parser::Ast_Node_Expression::~Ast_Node_Expression() { 
+        
+        delete values; delete token_ids; 
+        
+        if (destroy_expression_instructions) 
+            { if (expression_instructions) expression_instructions->~Ast_Node(); free(expression_instructions); }  
+                  
+}
 
-parser::Ast_Node_Expression::Ast_Node_Expression() : Ast_Node(AST_NODE_EXPRESSION, 0) 
+parser::Ast_Node_Expression::Ast_Node_Expression() : Ast_Node(AST_NODE_EXPRESSION, 0), expression_instructions(0), destroy_expression_instructions(1)
     { values = new utils::Linked_List <Ast_Node*>(); token_ids = new utils::Linked_List <Token*>(); token_ids->destroy_content = 0; }
 
-parser::Ast_Node_Expression::Ast_Node_Expression(Ast_Node* __value, Token* __token_id) : Ast_Node(AST_NODE_EXPRESSION, 0) 
+parser::Ast_Node_Expression::Ast_Node_Expression(Ast_Node* __value, Token* __token_id) : Ast_Node(AST_NODE_EXPRESSION, 0), expression_instructions(0), destroy_expression_instructions(1)
     { values = new utils::Linked_List <Ast_Node*>(); token_ids = new utils::Linked_List <Token*>(); token_ids->destroy_content = 0; values->add(__value); token_ids->add(__token_id); }
 
-parser::Ast_Node_Expression::Ast_Node_Expression(Ast_Node* __value, Ast_Node* __value_2, Token* __token_id) : Ast_Node(AST_NODE_EXPRESSION, 0) 
+parser::Ast_Node_Expression::Ast_Node_Expression(Ast_Node* __value, Ast_Node* __value_2, Token* __token_id) : Ast_Node(AST_NODE_EXPRESSION, 0), expression_instructions(0), destroy_expression_instructions(1)
     { values = new utils::Linked_List <Ast_Node*>(); token_ids = new utils::Linked_List <Token*>(); token_ids->destroy_content = 0; values->add(__value); values->add(__value_2); token_ids->add(__token_id); }
 
 void parser::Ast_Node_Expression::set(Ast* __ast) {
@@ -1187,8 +1234,9 @@ void parser::Ast_Node_Expression::set_representive_type(Ast* __ast) {
 
     int _current_priority = 0;
 
+    if (!_token_ids->count && _values->count == 1) destroy_expression_instructions = 0;
 
-    if (_token_ids->count == 1 && _values->count == 1) {
+    else if (_token_ids->count == 1 && _values->count == 1) {
 
         __ast->add_to_chain(
             _values->operator[](0)->representive_type->pointer_level ?
@@ -1217,7 +1265,29 @@ void parser::Ast_Node_Expression::set_representive_type(Ast* __ast) {
 
         for (int _ = 0; _ < _parameters_type->count; _++) delete _parameters_type->operator[](_);
 
-        _values->getDataLinkedList(0)->object = _function_declaration_node;
+        Ast_Node_Function_Call* _function_call_node = (Ast_Node_Function_Call*) malloc(sizeof(Ast_Node_Function_Call));
+
+        new (_function_call_node) Ast_Node_Function_Call(
+            0
+        );
+
+        Ast_Node_Pointer_Operation* _node_pointer_operation = (Ast_Node_Pointer_Operation*) malloc(sizeof(Ast_Node_Pointer_Operation));
+
+        new (_node_pointer_operation) Ast_Node_Pointer_Operation(
+            0, 1
+        );
+
+        if (_values->operator[](0)->node_type != AST_NODE_FUNCTION_CALL)
+
+            _node_pointer_operation->destroy_value = 0;
+
+        _node_pointer_operation->value = _values->operator[](0);
+
+        _function_call_node->function_declaration = _function_declaration_node;
+
+        _function_call_node->representive_type = _function_declaration_node->representive_type;
+
+        _values->getDataLinkedList(0)->object = _function_call_node;
 
         _token_ids->getDataLinkedList(0)->destroy_content = 0;
 
@@ -1284,7 +1354,54 @@ void parser::Ast_Node_Expression::set_representive_type(Ast* __ast) {
 
                     for (int _ = 0; _ < _parameters_type->count; _++) delete _parameters_type->operator[](_);
 
-                    _values->getDataLinkedList(_)->object = _function_declaration_node;
+                    Ast_Node_Function_Call* _function_call_node = (Ast_Node_Function_Call*) malloc(sizeof(Ast_Node_Function_Call));
+
+                    new (_function_call_node) Ast_Node_Function_Call(
+                        0
+                    );
+
+                    Ast_Node_Pointer_Operation* _node_pointer_operation = (Ast_Node_Pointer_Operation*) malloc(sizeof(Ast_Node_Pointer_Operation));
+
+                    new (_node_pointer_operation) Ast_Node_Pointer_Operation(
+                        0, 1
+                    );
+
+                    if (_values->operator[](_)->node_type != AST_NODE_FUNCTION_CALL)
+
+                        _node_pointer_operation->destroy_value = 0;
+
+                    _node_pointer_operation->value = _values->operator[](_);
+
+                    Ast_Node_Expression* _expression_node_first = (Ast_Node_Expression*) malloc(sizeof(Ast_Node_Expression));
+
+                    new (_expression_node_first) Ast_Node_Expression();
+
+                    _expression_node_first->values->add(_node_pointer_operation);
+
+                    _function_call_node->parameters->add(
+                        _expression_node_first
+                    );
+
+
+                    Ast_Node_Expression* _expression_node_second = (Ast_Node_Expression*) malloc(sizeof(Ast_Node_Expression));
+
+                    new (_expression_node_second) Ast_Node_Expression();
+
+                    if (_values->operator[](_ + 1)->node_type != AST_NODE_FUNCTION_CALL)
+
+                        _expression_node_second->values->destroy_content = 0;
+
+                    _expression_node_second->values->add(_values->operator[](_ + 1));
+
+                    _function_call_node->parameters->add(
+                        _expression_node_second
+                    );
+
+                    _function_call_node->function_declaration = _function_declaration_node;
+
+                    _function_call_node->representive_type = _function_declaration_node->representive_type;
+
+                    _values->getDataLinkedList(_)->object = _function_call_node;
 
                     _values->getDataLinkedList(_ + 1)->destroy_content = 0;
                     _token_ids->getDataLinkedList(_)->destroy_content = 0;
@@ -1303,8 +1420,14 @@ void parser::Ast_Node_Expression::set_representive_type(Ast* __ast) {
 
         }
 
+    expression_instructions = _values->operator[](0);
+
     representive_type = 
         _values->operator[](0)->representive_type;
+
+    // std::cout << "Stop here " << std::endl;
+
+    // exit(1);
 
     delete _parameters_type;
     delete _token_ids;
@@ -1515,7 +1638,7 @@ void parser::Ast_Node_Function_Call::set_function_declaration(Ast* __ast, Name_S
             __ast, 
             function_token_name->identifier, 
             _parameters_type,
-            __is_static, 
+            __is_static,
             __is_destructor
         );
     
@@ -1678,10 +1801,10 @@ parser::Ast_Node* parser::Ast_Node_Implicit_Value::generate(Ast* __ast) {
 
 
 parser::Ast_Node_Pointer_Operation::~Ast_Node_Pointer_Operation() 
-    { delete representive_type; if (pointer_operations) delete pointer_operations; value->~Ast_Node(); free(value); }
+    { delete representive_type; if (pointer_operations) delete pointer_operations; if (destroy_value) { value->~Ast_Node(); free(value); } }
 
 parser::Ast_Node_Pointer_Operation::Ast_Node_Pointer_Operation(utils::Linked_List <Token*>* __pointer_operations, int __pointer_level) 
-    : Ast_Node(AST_NODE_POINTER_OPERATION, 0), pointer_operations(__pointer_operations), pointer_level(__pointer_level) {}
+    : Ast_Node(AST_NODE_POINTER_OPERATION, 0), pointer_operations(__pointer_operations), pointer_level(__pointer_level), destroy_value(1) {}
 
 void parser::Ast_Node_Pointer_Operation::set_value(Ast* __ast) {
 
@@ -1991,6 +2114,8 @@ void parser::Ast_Node_Constructor_Call::set_add_this_variable(Ast* __ast) {
 
 void parser::Ast_Node_Constructor_Call::set_add_this_variable(Ast* __ast, Ast_Node_Variable_Declaration* __variable_declaration) {
 
+    // this_variable = __variable_declaration;
+
     Ast_Node_Variable* _variable_node = (Ast_Node_Variable*) malloc(sizeof(Ast_Node_Variable));
 
     new (_variable_node) Ast_Node_Variable(
@@ -2005,6 +2130,8 @@ void parser::Ast_Node_Constructor_Call::set_add_this_variable(Ast* __ast, Ast_No
     );
 
     _pointer_operation_node->value = _variable_node;
+
+    _pointer_operation_node->set_representive_value(__ast);
 
     Ast_Node_Expression* _expression_node = (Ast_Node_Expression*) malloc(sizeof(Ast_Node_Expression));
 
@@ -2082,6 +2209,12 @@ parser::Ast_Node_Constructor_Call* parser::Ast_Node_Constructor_Call::generate(A
     _constructor_call_node->set_add_this_variable(__ast);
 
     _constructor_call_node->constructor->set_function_declaration(__ast, 0, _backup_state, 0, 0);
+
+    delete _constructor_call_node->constructor->parameters->remove(
+        0
+    );
+
+    _constructor_call_node->constructor->parameters->insert(0,0);
 
     delete __ast->open_nodes->remove(
         __ast->open_nodes->count
@@ -2167,8 +2300,12 @@ void parser::Ast_Node_Constructor_Call::set_variable_declaration_constructor(Ast
     int _backup_state = __ast->get_token(0)->position_information.column;
     char* _search_name = 0;
 
+
+    Ast_Node_Variable_Declaration* _variable_declaration = 
+        (Ast_Node_Variable_Declaration*) __ast->open_nodes->last->object;
+
     Type_Information* _struct_declaration_type = 
-        ( (Ast_Node_Variable_Declaration*) __ast->open_nodes->last->object)->representive_type->get_copy();
+        _variable_declaration->representive_type->get_copy();
 
     if (_struct_declaration_type->pointer_level) {
 
@@ -2200,7 +2337,7 @@ void parser::Ast_Node_Constructor_Call::set_variable_declaration_constructor(Ast
 
     if (__expression) _constructor_call_node->constructor->parameters->add(__expression);
 
-    _constructor_call_node->set_add_this_variable(__ast);
+    _constructor_call_node->set_add_this_variable(__ast, _variable_declaration);
 
     _constructor_call_node->constructor->set_function_declaration(__ast, 0, _backup_state, 0, 0);
 
@@ -2212,7 +2349,9 @@ void parser::Ast_Node_Constructor_Call::set_variable_declaration_constructor(Ast
 
     __ast->print("--> Ast Node Constructor Call - Variable Declaration End <--");
 
-    ( (Ast_Node_Variable_Declaration*) __ast->open_nodes->last->object )->constructor_call =
+    // std::cout << "Node type -> " << _constructor_call_node->constructor->node_type << std::endl;
+
+    _variable_declaration->constructor_call =
         _constructor_call_node;
 
 }
