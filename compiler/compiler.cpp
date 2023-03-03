@@ -1,6 +1,7 @@
 #include "compiler.h"
 
 #include "compiler_exceptions.h"
+#include "linked_list.h"
 #include "common.h"
 
 /* Parser */
@@ -80,6 +81,14 @@ void compiler::Compiler::full_compilation() {
         convertor->get_compiled_byte_code();
 
     _compiled_byte_code->print();
+
+    std::cout << "\n\n\t\t --> Entry Points <--" <<  "\n" << std::endl;
+
+    std::cout << "\t";
+
+    convertor->entry_points->printContent();
+
+    _compiled_byte_code->save_in_file("file.byte_code");
 
     delete _compiled_byte_code;
 

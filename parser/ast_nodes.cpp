@@ -43,6 +43,7 @@ void parser::Ast_Node_Name_Space::set_declarations(Ast* __ast) {
                 { utils::Linked_List <Ast_Node*>* _ = Ast_Node_Variable_Declaration::generate(__ast); declarations->join(_); delete _; break; }
             case AST_NODE_FUNCTION_DECLARATION: declarations->add(Ast_Node_Function_Declaration::generate(__ast)); break;
             case AST_NODE_BYTE_CODE: declarations->add(Ast_Node_Byte_Code::generate(__ast)); break;
+            case AST_NODE_CONTRACT: declarations->add(Ast_Node_Contract_Declaration::generate(__ast)); break;
 
             default: throw Unexpected_Token_Ast(__ast->code_information, __ast->get_token(0)); break;
         }
@@ -211,7 +212,7 @@ void parser::Ast_Node_Code_Block::set_code(Ast* __ast, bool __once = 0) {
         switch (get_node_type(__ast))
         {
             case AST_CLOSE_BRACE: __ast->tokens_position++; goto out; break;
-            case AST_END_INSTRUCTION: __ast->tokens_position++; goto out; break;
+            case AST_END_INSTRUCTION: __ast->tokens_position++; break;
 
             case AST_NODE_CODE_BLOCK: code->add(Ast_Node_Code_Block::generate(__ast)); break;
             case AST_NODE_VARIABLE_DECLARATION: 
@@ -289,6 +290,23 @@ parser::Ast_Node_Code_Block* parser::Ast_Node_Code_Block::generate(Ast* __ast) {
     __ast->print("--> Ast Node Code Block End <---");
 
     return _code_block_node;
+
+}
+
+
+
+parser::Ast_Node_Contract_Declaration::~Ast_Node_Contract_Declaration() {}
+
+parser::Ast_Node_Contract_Declaration::Ast_Node_Contract_Declaration() 
+    : Ast_Node(AST_NODE_CONTRACT, 0) {}
+
+parser::Ast_Node_Contract_Declaration* parser::Ast_Node_Contract_Declaration::generate(Ast* __ast) {
+
+    __ast->print("--> Ast Node Contract Declaration <--");
+
+    __ast->print("--> Ast Node Contract Declaration End <--");
+
+    exit(1);
 
 }
 
@@ -1304,6 +1322,8 @@ void parser::Ast_Node_Expression::set_representive_type(Ast* __ast) {
 
         while (_values->count != 1) {
 
+            std::cout << "Expression <----" << std::endl;
+
             for (int _ = 0; _ < _values->count && _values->count != 1; _++) 
 
                 if (
@@ -1372,11 +1392,15 @@ void parser::Ast_Node_Expression::set_representive_type(Ast* __ast) {
 
                     _node_pointer_operation->value = _values->operator[](_);
 
+                    _node_pointer_operation->set_representive_value(__ast);
+
                     Ast_Node_Expression* _expression_node_first = (Ast_Node_Expression*) malloc(sizeof(Ast_Node_Expression));
 
                     new (_expression_node_first) Ast_Node_Expression();
 
                     _expression_node_first->values->add(_node_pointer_operation);
+
+                    _expression_node_first->set_representive_type(__ast);
 
                     _function_call_node->parameters->add(
                         _expression_node_first
@@ -1396,6 +1420,8 @@ void parser::Ast_Node_Expression::set_representive_type(Ast* __ast) {
                     _function_call_node->parameters->add(
                         _expression_node_second
                     );
+
+                    _expression_node_second->set_representive_type(__ast);
 
                     _function_call_node->function_declaration = _function_declaration_node;
 
@@ -1419,6 +1445,8 @@ void parser::Ast_Node_Expression::set_representive_type(Ast* __ast) {
             _current_priority++;
 
         }
+
+    std::cout << "Hey -< " << _values->operator[](0) << std::endl;
 
     expression_instructions = _values->operator[](0);
 
@@ -1712,6 +1740,10 @@ parser::Ast_Node* parser::Ast_Node_Function_Call::generate_accessing_function_ca
 
     _function_call_node->set_function_declaration(__ast, 0, _backup_state, 0, _is_destructor); 
 
+    // delete _function_call_node->parameters->remove(0);
+
+    // _function_call_node->parameters->insert(0, 0);
+
     __ast->print("--> Ast Node Function Call Accessing End <--");
 
     if (get_node_type(__ast) == AST_NODE_ACCESSING)
@@ -1916,7 +1948,7 @@ parser::Ast_Node* parser::Ast_Node_Parenthesis::generate(Ast* __ast) {
 
 
 
-parser::Ast_Node_Accessing::~Ast_Node_Accessing() { accessing->~Ast_Node(); free(accessing); }
+parser::Ast_Node_Accessing::~Ast_Node_Accessing() { accessing->~Ast_Node(); free(accessing); value->~Ast_Node(); free(value); }
 
 parser::Ast_Node_Accessing::Ast_Node_Accessing(Ast_Node* __value, bool __is_pointer_accessing) 
     : Ast_Node(AST_NODE_ACCESSING, 0), value(__value), is_pointer_accessing(__is_pointer_accessing) {}
@@ -1949,6 +1981,8 @@ void parser::Ast_Node_Accessing::set_accessing(Ast* __ast) {
 
             _pointer_operation_node->value = value;
 
+            _pointer_operation_node->destroy_value = 0;
+
             _pointer_operation_node->set_representive_value(__ast);
     
             Ast_Node_Expression* _first_parameter_expression = (Ast_Node_Expression*) malloc(sizeof(Ast_Node_Expression));
@@ -1963,7 +1997,11 @@ void parser::Ast_Node_Accessing::set_accessing(Ast* __ast) {
 
             accessing = Ast_Node_Function_Call::generate_accessing_function_call(
                 __ast, _first_parameter_expression
-            ); break;
+            ); 
+            
+
+            
+            break;
 
         }
         
@@ -2086,7 +2124,7 @@ void parser::Ast_Node_Constructor_Call::set_add_this_variable(Ast* __ast) {
         representive_type->get_copy(), 0, 0
     );
 
-    this_variable->representive_type->pointer_level++;
+    // this_variable->representive_type->pointer_level++;
 
     //
 
@@ -2096,12 +2134,22 @@ void parser::Ast_Node_Constructor_Call::set_add_this_variable(Ast* __ast) {
         this_variable, 0
     );
 
+    Ast_Node_Pointer_Operation* _pointer_operation_node = (Ast_Node_Pointer_Operation*) malloc(sizeof(Ast_Node_Pointer_Operation));
+
+    new (_pointer_operation_node) Ast_Node_Pointer_Operation(
+        0, 1
+    );
+
+    _pointer_operation_node->value = _variable_node;
+
+    _pointer_operation_node->set_representive_value(__ast);
+
     Ast_Node_Expression* _expression_node = (Ast_Node_Expression*) malloc(sizeof(Ast_Node_Expression));
 
     new (_expression_node) Ast_Node_Expression();
 
     _expression_node->values->add(
-        _variable_node
+        _pointer_operation_node
     );
 
     _expression_node->set_representive_type(__ast);
@@ -2210,11 +2258,11 @@ parser::Ast_Node_Constructor_Call* parser::Ast_Node_Constructor_Call::generate(A
 
     _constructor_call_node->constructor->set_function_declaration(__ast, 0, _backup_state, 0, 0);
 
-    delete _constructor_call_node->constructor->parameters->remove(
-        0
-    );
+    // delete _constructor_call_node->constructor->parameters->remove(
+    //     0
+    // );
 
-    _constructor_call_node->constructor->parameters->insert(0,0);
+    // _constructor_call_node->constructor->parameters->insert(0,0);
 
     delete __ast->open_nodes->remove(
         __ast->open_nodes->count
@@ -2471,6 +2519,8 @@ parser::Ast_Node_Return_Key_Word* parser::Ast_Node_Return_Key_Word::generate(Ast
     _return_key_word_node->set_expression(__ast);
 
     _return_key_word_node->confirm_return_type(__ast, _inicial_position);
+
+    std::cout << "Current token id -> " << __ast->get_token(0)->id << std::endl;
 
     delete __ast->open_nodes->remove(
         __ast->open_nodes->count

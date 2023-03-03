@@ -11,4 +11,12 @@ namespace utils {
 
 }
 
+/* Parser */
+namespace parser {
+
+    // Token
+    struct Token;
+
+}
+
 #endif

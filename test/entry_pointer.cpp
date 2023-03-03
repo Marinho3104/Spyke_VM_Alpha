@@ -1,5 +1,7 @@
 
+#include "byte_code.h"
 #include "compiler.h"
+#include "program.h"
 
 #include <iostream>
 
@@ -28,6 +30,16 @@ int main() {
     compiler::Compiler* _compiler = new compiler::Compiler("./contract_test/contract_data.ph", COMPILER_MODE_FULL_COMPILATION);
 
     delete _compiler;
+
+    // byte_code::Byte_Code_File* _byte_code_file = byte_code::Byte_Code_File::get_file_content("file.byte_code");
+
+    // virtual_machine::Program* _program = new virtual_machine::Program(20535, _byte_code_file->content, _byte_code_file->size);
+
+    // _program->execute();
+
+    // delete _byte_code_file;
+
+    // delete _program;
 
 }
 

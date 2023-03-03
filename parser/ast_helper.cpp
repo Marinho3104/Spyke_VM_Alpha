@@ -15,6 +15,47 @@
 #include <string.h>
 
 
+parser::Implicit_Values_Tracker::~Implicit_Values_Tracker() { delete implicit_value_tokens; delete positions; }
+
+parser::Implicit_Values_Tracker::Implicit_Values_Tracker() {
+
+    implicit_value_tokens = new utils::Linked_List <Token*>(0);
+    positions = new utils::Linked_List <int>();
+
+}
+
+int parser::Implicit_Values_Tracker::add_implicit_value(Token* __token) {
+
+    for (int _ = 0; _ < implicit_value_tokens->count; _++)
+
+        if (
+            implicit_value_tokens->operator[](_)->operator==(
+                __token
+            )
+        ) return _;
+
+    implicit_value_tokens->add(
+        __token
+    );
+
+    positions->add(
+        positions->count ? 
+            positions->operator[](positions->count) + get_implicit_value_type_size(implicit_value_tokens->operator[](implicit_value_tokens->count)) :
+            0
+    );
+
+    return implicit_value_tokens->count - 1;
+
+}
+
+void parser::Implicit_Values_Tracker::update_positions(int __off) {
+
+    for (int _ = 0; _ < positions->count; _++) positions->getDataLinkedList(_)->object += __off;
+
+}
+
+
+
 parser::Declaration_Tracker::~Declaration_Tracker() { delete struct_declarations; delete variable_declarations; delete function_declarations; }
 
 parser::Declaration_Tracker::Declaration_Tracker() {
@@ -73,6 +114,13 @@ parser::Ast_Node_Function_Declaration* parser::Declaration_Tracker::get_function
         Ast_Node_Function_Declaration* _function_declaration = 0;
 
         for (int _ = 0; _ < function_declarations->count; _++) {
+
+            // if (function_declarations->operator[](_)->function_token_name) {
+
+            //     std::cout << "Token name -> " << function_declarations->operator[](_)->function_token_name->identifier << std::endl;
+            //     std::cout << "Function name -> " << __function_name << std::endl;
+
+            // } else std::cout << "No token declared" << std::endl;
 
             if (
                 function_declarations->operator[](_)->function_token_name && 
@@ -585,6 +633,7 @@ int parser::get_node_type(Ast* __ast) {
         case POINTER: case ADDRESS: return AST_NODE_POINTER_OPERATION; break;
         case ACCESSING: case ACCESSING_POINTER: return AST_NODE_ACCESSING; break;
         case CONTINUE: case BREAK: return AST_NODE_CONTROL_STRUCTS_KEY_WORD; break;
+        case CONTRACT: return AST_NODE_CONTRACT; break; 
 
         // No Return
         case STATIC: __ast->tokens_position++; break;
@@ -907,4 +956,19 @@ parser::Ast_Node_Variable_Declaration* parser::get_condition(Ast* __ast) {
 }
 
 bool parser::is_control_struct(int __node_id) { return __node_id == AST_NODE_WHILE || __node_id == AST_NODE_DO_WHILE || __node_id == AST_NODE_FOR; }
+
+int parser::get_implicit_value_type_size(Token* __token) {
+
+    switch (__token->id)
+    {
+    case IMPLICIT_VALUE_INT: return PRIMITIVE_TYPE_INT_SIZE; break;
+    // case IMPLICIT_VALUE_CHARACTER: return 1; break;
+    // case IMPLICIT_VALUE_STRING: return 0; break;
+    default: break;
+    }
+
+    return -1;
+
+}
+
 

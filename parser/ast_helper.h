@@ -7,6 +7,19 @@
 
 namespace parser {
 
+    struct Implicit_Values_Tracker {
+
+        utils::Linked_List <Token*>* implicit_value_tokens;
+        utils::Linked_List <int>* positions;
+
+        ~Implicit_Values_Tracker(); Implicit_Values_Tracker();
+
+        int add_implicit_value(Token*);
+
+        void update_positions(int);
+
+    };
+
     struct Declaration_Tracker {
 
         utils::Linked_List <parser::Ast_Node_Struct_Declaration*>* struct_declarations;
@@ -105,6 +118,8 @@ namespace parser {
     Ast_Node_Variable_Declaration* get_condition(Ast*);
 
     bool is_control_struct(int);
+
+    int get_implicit_value_type_size(Token*);
 
 }
 

@@ -30,8 +30,8 @@ parser::Ast::Ast(Code_Information* __code_information, utils::Linked_List <Token
     : tokens_collection(__tokens_collection), code_information(__code_information), tokens_position(0) { 
         
         name_space_chain = new utils::Linked_List <Name_Space*>();
-        implicit_values = new utils::Linked_List <Token*>(0);
         open_nodes = new utils::Linked_List <Ast_Node*>();
+        implicit_values = new Implicit_Values_Tracker();
         name_space_control = new Name_Space_Control();
 
         generate_ast_nodes(); 
@@ -53,23 +53,7 @@ parser::Token* parser::Ast::get_token(int __off) { return tokens_collection->ope
 void parser::Ast::generate_ast_nodes() 
     { global_name_space = Ast_Node_Name_Space::generate(this, name_space_control->name_spaces_collection->first->object); }
 
-int parser::Ast::add_implicit_value(Token* __token) {
-
-    for (int _ = 0; _ < implicit_values->count; _++)
-
-        if (
-            implicit_values->operator[](_)->operator==(
-                __token
-            )
-        ) return _;
-
-    implicit_values->add(
-        __token
-    );
-
-    return implicit_values->count - 1;
-
-}
+int parser::Ast::add_implicit_value(Token* __token) { return implicit_values->add_implicit_value(__token); }
 
 void parser::Ast::add_to_chain(Name_Space* __name_space) { name_space_chain->add(__name_space, 0); }
 

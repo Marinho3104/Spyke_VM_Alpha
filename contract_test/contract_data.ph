@@ -13,21 +13,54 @@ namespace built_ins {
             
         }
 
-        // int add(int);
+        Int(int) {
+
+        }
+
+        int add(int) {
+
+
+
+        }
+
+    };
+
+    struct Bool {
+
+        ~Bool() {
+
+        }
+
+        Bool() {
+
+        }
+
+        Bool(bool) {
+            
+        }
+
+
 
     };
 
 }
 
-int m;
-
 namespace test {
 
-    void hh() {
-
-        int(); // not working
+    int func_call(int) {
 
     }
 
+    void func() {
+
+        int m, mm;
+
+        m + 12;
+
+        // func_call(12);
+
+    }
 
 }
+
+

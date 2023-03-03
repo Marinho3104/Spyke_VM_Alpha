@@ -5,6 +5,9 @@
 
 #include "byte_code_definitions.h"
 
+#define CODE_SIZE 1
+#define ARGUMENT_SIZE 2
+
 namespace byte_code {
 
     struct Byte_Code {
@@ -26,17 +29,39 @@ namespace byte_code {
 
         int current_stack_size;
 
+        bool entry_point;
+
         ~Byte_Code_Block(); Byte_Code_Block(utils::Linked_List <Byte_Code*>*); Byte_Code_Block();
+
 
     };
 
     struct Compiled_Byte_Code {
 
         utils::Linked_List <Byte_Code_Block*>* blocks;
+        int implicit_values_size;
+        void* implicit_values;
 
         ~Compiled_Byte_Code(); Compiled_Byte_Code(utils::Linked_List <Byte_Code_Block*>*);
 
+        void set_implicit_values(utils::Linked_List <parser::Token*>*, int);
+
+
+        void save_in_file(const char*);
+
         void print();
+
+    };
+
+    struct Byte_Code_File {
+
+        void* content;
+        short size;
+
+        ~Byte_Code_File(); Byte_Code_File(void*, short);
+
+        static Byte_Code_File* get_file_content(const char*);
+
 
     };
 

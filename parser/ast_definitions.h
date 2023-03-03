@@ -23,6 +23,7 @@
 #define AST_NODE_ELSE 20
 #define AST_NODE_FOR 21
 #define AST_NODE_CONTROL_STRUCTS_KEY_WORD 22
+#define AST_NODE_CONTRACT 23
 
 /* Ast Helper Definitions for get_node_type() */
 

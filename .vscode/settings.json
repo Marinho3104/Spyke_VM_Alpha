@@ -69,6 +69,10 @@
         "__functional_base": "cpp",
         "__mutex_base": "cpp",
         "__threading_support": "cpp",
-        "ios": "cpp"
+        "ios": "cpp",
+        "map": "cpp",
+        "set": "cpp",
+        "shared_mutex": "cpp",
+        "cfenv": "cpp"
     }
 }

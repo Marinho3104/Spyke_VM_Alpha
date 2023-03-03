@@ -49,6 +49,16 @@ namespace parser {
 
     };
 
+    struct Ast_Node_Contract_Declaration : Ast_Node {
+
+        Ast_Node_Name_Space* body;
+        
+        ~Ast_Node_Contract_Declaration(); Ast_Node_Contract_Declaration();
+
+        static Ast_Node_Contract_Declaration* generate(Ast*);
+
+    };
+
     struct Ast_Node_Struct_Declaration : Ast_Node {
 
         Ast_Node_Name_Space* body;

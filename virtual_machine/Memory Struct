@@ -1,0 +1,8 @@
+
+Stack -- 8192
+Heap -- 16384
+Implicit | Byte Code -- 32768
+
+Total size -> 57344
+
+Total Pages -> 14

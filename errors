@@ -1,0 +1,17 @@
+
+
+    struct Test_2 {
+
+        int mario;
+
+    };
+
+    struct Test_Struct {
+
+        int m, mm;
+
+        Test_2 test_2;
+
+        // ::built_ins::Test_Struct* mario; <---------
+
+    };

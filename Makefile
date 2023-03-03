@@ -2,6 +2,7 @@
 byte_code_path := ./byte_code/
 built_ins_path := ./built_ins/
 compiler_path := ./compiler/
+virtual_machine_path := ./virtual_machine/
 entry_point_path := ./test/
 parser_path := ./parser/
 utils_path := ./utils/
@@ -10,6 +11,7 @@ output_name := ./output
 
 all:
 
+	$(MAKE) -C $(virtual_machine_path)
 	$(MAKE) -C $(entry_point_path)
 	$(MAKE) -C $(byte_code_path)
 	$(MAKE) -C $(built_ins_path)
