@@ -1,5 +1,6 @@
 #include "byte_code.h"
 
+#include "program_definitions.h"
 #include "byte_code_helper.h"
 #include "linked_list.h"
 #include "ast_helper.h"
@@ -11,7 +12,7 @@ byte_code::Byte_Code::~Byte_Code() {}
 
 byte_code::Byte_Code::Byte_Code(char __code, short __argument) : code(__code), argument(__argument) {}
 
-void byte_code::Byte_Code::print() { std::cout << "Byte Code -> " << (int) code << " argument -> " << (int) argument << std::endl; }
+void byte_code::Byte_Code::print() { std::cout << "Byte Code -> " << (int) code << " argument -> " << (int) argument; }
 
 byte_code::Byte_Code* byte_code::Byte_Code::generate(char __code, short __argument) {
 
@@ -93,6 +94,9 @@ void byte_code::Compiled_Byte_Code::save_in_file(const char* __file_name) {
 
 void byte_code::Compiled_Byte_Code::print() {
 
+    int _instruction_size = HEAP_MEMORY_SIZE + STACK_MEMORY_SIZE + implicit_values_size;
+        
+
     for (int _ = 0; _ < blocks->count; _++) {
 
         std::cout << "\tBlock: " << _ << "\n" << std::endl;
@@ -102,6 +106,10 @@ void byte_code::Compiled_Byte_Code::print() {
             std::cout << "\t\t";
 
             blocks->operator[](_)->block->operator[](__)->print();
+
+            std::cout << " || instruction position -> " << _instruction_size << std::endl;
+
+            _instruction_size += 3;
 
         }
 

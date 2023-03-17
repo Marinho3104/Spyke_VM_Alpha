@@ -1,0 +1,108 @@
+
+namespace built_ins {
+
+    struct Void;
+
+    struct Int {
+
+        ~Int() {
+            
+        }
+
+        Int() {
+            
+        }
+
+        Int(int) {
+
+        }
+
+        int add(int __add) {
+
+            __add;
+            *this;
+            exec 16, 4;
+
+            return __add;
+
+        }
+
+        void add_assign(int __add) {
+
+            *this;
+            __add;
+            exec 16, 4;
+
+        }
+
+        void equal(int __eq) {
+
+            __eq;
+            *this;
+            exec 9, 4;
+
+        } 
+
+    };
+
+    struct Bool {
+
+        ~Bool() {
+
+        }
+
+        Bool() {
+
+        }
+
+        Bool(bool) {
+            
+        }
+
+
+
+    };
+
+    struct Pointer {
+
+        Pointer() {
+
+        }
+
+        void equal(pointer) {
+
+        }
+
+    };
+
+}
+
+namespace test {
+
+    int func_call_sec(int mmm) {
+
+        return 1234;
+
+    }
+
+    int func_call(int mario) {
+
+        mario += 1;
+
+        return mario;
+
+    }
+
+    void func() {
+
+        func_call_sec(19) + func_call_sec(19);
+
+        int m;
+
+        m;
+
+    }
+
+}
+
+

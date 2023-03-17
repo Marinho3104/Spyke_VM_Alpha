@@ -73,6 +73,9 @@
         "map": "cpp",
         "set": "cpp",
         "shared_mutex": "cpp",
-        "cfenv": "cpp"
+        "cfenv": "cpp",
+        "backup_code_heyu": "cpp",
+        "codeee": "cpp",
+        "code_again": "cpp"
     }
 }

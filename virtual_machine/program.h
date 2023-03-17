@@ -9,16 +9,18 @@ namespace virtual_machine {
 
     struct Program {
 
-        void* current_instruction;
+        void* current_instruction, *exit_instruction;
         void* top_stack_memory;
-        short* stack_frame;
+        unsigned short* stack_frame;
         void* memory;
 
-        short top_stack_memory_addr;
+        unsigned short top_stack_memory_addr;
 
-        ~Program(); Program(short, void*, short); 
+        ~Program(); Program(unsigned short, void*, short); 
 
         void set_information(void*, short);
+
+        void set_exit_instruction();
 
         void execute();
 

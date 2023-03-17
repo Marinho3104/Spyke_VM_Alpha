@@ -947,6 +947,8 @@ parser::Ast_Node_Variable_Declaration* parser::get_condition(Ast* __ast) {
         __ast, _expression_condition
     );
 
+    _variable_declaration->constructor_call->delete_this_variable = 0;
+
     delete __ast->open_nodes->remove(
         __ast->open_nodes->count
     );

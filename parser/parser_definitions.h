@@ -35,9 +35,14 @@ namespace parser {
     struct Name_Space;
 
     struct Ast_Node;
+    struct Ast_Node_If;
+    struct Ast_Node_For;
+    struct Ast_Node_Else;
     struct Ast_Node_Cast;
     struct Ast_Node_While;
+    struct Ast_Node_Else_If;
     struct Ast_Node_Variable;
+    struct Ast_Node_Do_While;
     struct Ast_Node_Accessing;
     struct Ast_Node_Byte_Code;
     struct Ast_Node_Code_Block;
@@ -47,11 +52,12 @@ namespace parser {
     struct Ast_Node_Function_Call;
     struct Ast_Node_Implicit_Value;
     struct Ast_Node_Return_Key_Word;
+    struct Ast_Node_Constructor_Call;
     struct Ast_Node_Pointer_Operation;
     struct Ast_Node_Struct_Declaration;
     struct Ast_Node_Variable_Declaration;
     struct Ast_Node_Function_Declaration;
-    struct Ast_Node_Constructor_Call;
+    struct Ast_Node_Control_Structs_Key_Words;
 
     // Ast Helper
     struct Type_Information;

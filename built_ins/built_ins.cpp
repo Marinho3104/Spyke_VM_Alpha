@@ -34,6 +34,13 @@ char* built_ins::get_struct_function_name_of_operation_id(int __operation_id) {
     {
     case FUNCTION_OPERATOR_PLUS: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_PLUS_FUNCTION_NAME ); break;
     case FUNCTION_OPERATOR_MINUS: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_MINUS_FUNCTION_NAME ); break;
+    case FUNCTION_OPERATOR_MULTIPLICATION: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_MULTIPLICATION_FUNCTION_NAME ); break;
+    case FUNCTION_OPERATOR_DIVISION: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_DIVISION_FUNCTION_NAME ); break;
+    case FUNCTION_OPERATOR_MODULOS: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_MODULOS_FUNCTION_NAME ); break;
+
+    case FUNCTION_OPERATOR_EQUAL: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_EQUAL_FUNCTION_NAME ); break;
+    case FUNCTION_OPERATOR_PLUS_ASSIGN: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_PLUS_ASSIGN_FUNCTION_NAME ); break;
+    case FUNCTION_OPERATOR_MINUS_ASSIGN: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_MINUS_ASSIGN_FUNCTION_NAME ); break;
 
     case FUNCTION_OPERATOR_INCREMENT: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_INCREMENT_FUNCTION_NAME ); break;
     case FUNCTION_OPERATOR_DECREMENT: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_DECREMENT_FUNCTION_NAME ); break;

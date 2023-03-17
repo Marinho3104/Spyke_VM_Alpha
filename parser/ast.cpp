@@ -40,7 +40,7 @@ parser::Ast::Ast(Code_Information* __code_information, utils::Linked_List <Token
 
 void parser::Ast::print(const char* __information) {
 
-    if (1) return;
+    if (0) return;
 
     for (int _  = 0; _ < open_nodes->count + 1; _++) std::cout << "\t";
 

@@ -1,0 +1,431 @@
+
+void parser::set_byte_code_of_ast_node_function_declaration(Convertor* __convertor, Ast_Node_Function_Declaration* __ast_node_function_declaration) {
+
+    __convertor->print("--> Get Byte Code Of Ast Node Function Declaration <--");
+
+    if (__ast_node_function_declaration->body_position == -1)
+
+        __ast_node_function_declaration->body_position =
+            __convertor->add_block();
+
+    byte_code::Byte_Code_Block* _byte_code_block =
+        __convertor->blocks->operator[](__ast_node_function_declaration->body_position);
+
+    _byte_code_block->entry_point = 1;
+
+    if (!__ast_node_function_declaration->body_defined) return;
+
+    byte_code::Byte_Code_Block* _previous_code_block =
+        __convertor->current_block;
+
+    __convertor->current_block = 
+        _byte_code_block;
+
+    
+    // Return and address size
+    __convertor->current_block->current_stack_size = 
+        __ast_node_function_declaration->representive_type->get_size() + 2;
+
+    // Assign correct stack to variable declarations 
+    for (int _ = 0; _ < __ast_node_function_declaration->parameters->count; _++) {
+
+        ((Ast_Node_Variable_Declaration*) __ast_node_function_declaration->parameters->operator[](_))->stack_position = 
+            __convertor->current_block->current_stack_size;
+
+        __convertor->current_block->current_stack_size += 
+            __ast_node_function_declaration->parameters->operator[](_)->representive_type->get_size();
+    
+    }
+
+    // Function Body
+    __convertor->set_block(
+        __ast_node_function_declaration->body->code
+    );
+
+    // Deallocation
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            STACK_MEMORY_DEALLOCATION,
+            __convertor->current_block->current_stack_size
+        )
+    );
+
+    // Load address
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            LOAD_INVERTED,
+            __ast_node_function_declaration->representive_type->get_size()
+        )
+    );
+
+    // go to address
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            GO_STACK_FRAME,
+            0
+        )
+    );
+
+    __convertor->current_block = 
+        _previous_code_block;
+
+}
+
+void parser::set_byte_code_of_ast_node_variable_declaration(Convertor* __convertor, Ast_Node_Variable_Declaration* __ast_node_variable_declaration) {
+
+    __convertor->print("--> Get Byte Code Of Ast Node Variable Declaration <--");
+
+    __ast_node_variable_declaration->stack_position = 
+        __convertor->current_block->current_stack_size;
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            STACK_MEMORY_ALLOCATION,
+            __ast_node_variable_declaration->representive_type->get_size()
+        )
+    );
+
+    __convertor->current_block->current_stack_size += 
+        __ast_node_variable_declaration->representive_type->get_size();
+
+    if (__ast_node_variable_declaration->constructor_call)
+
+        set_byte_code_of_ast(
+            __convertor,
+            __ast_node_variable_declaration->constructor_call->constructor
+        );
+
+}
+
+void parser::set_byte_code_of_ast_node_expression(Convertor* __convertor, Ast_Node_Expression* __ast_node_expression) {
+
+    __convertor->print("--> Get Byte Code Of Ast Node Expression <--");
+
+    set_byte_code_of_ast(
+        __convertor,
+        __ast_node_expression->expression_instructions
+    );
+
+}
+
+void parser::set_byte_code_of_ast_node_variable(Convertor* __convertor, Ast_Node_Variable* __ast_node_variable) {
+
+    __convertor->print("--> Get Byte Code Of Ast Node Variable <--");
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            LOAD,
+            __convertor->current_block->current_stack_size - __ast_node_variable->variable_declaration->stack_position
+        )
+    );
+
+    if (__convertor->only_call) return;
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            LOAD,
+            0
+        )
+    );
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            MEMORY_COPY,
+            __ast_node_variable->representive_type->get_size()
+        )
+    );
+
+}
+
+void parser::set_byte_code_of_ast_node_implicit_value(Convertor* __convertor, Ast_Node_Implicit_Value* __ast_node_implicit_value) {
+
+    __convertor->print("--> Get Byte Code Of Ast Node Variable <--");
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            LOAD_GLOBAL,
+            __convertor->implicit_value->positions->operator[](
+                __ast_node_implicit_value->implicit_value_position
+            ) + HEAP_MEMORY_SIZE + STACK_MEMORY_SIZE
+        )
+    );
+
+    if (__convertor->only_call) return;
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            LOAD,
+            0
+        )
+    );
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            MEMORY_COPY,
+            __ast_node_implicit_value->representive_type->get_size()
+        )
+    );
+
+}
+
+void parser::set_byte_code_of_ast_node_function_call(Convertor* __convertor, Ast_Node_Function_Call* __ast_node_function_call) {
+
+    __convertor->print("--> Get Byte Code Of Ast Node Function Call <--");
+
+    int _backup_current_stack_size = 
+        __convertor->current_block->current_stack_size;
+
+    // Return and address size
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            STACK_MEMORY_ALLOCATION,
+            __ast_node_function_call->function_declaration->representive_type->get_size() + 2
+        )
+    );
+
+    __convertor->current_block->current_stack_size += 
+        __ast_node_function_call->function_declaration->representive_type->get_size() + 2;
+
+    // Address 
+    int _return_address_address = 
+        __convertor->current_block->current_stack_size - 2; 
+
+    // Previous value of call var
+    bool _prev_call_value = __convertor->only_call; __convertor->only_call = 0;
+    bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 0;
+
+    for (int _ = 0; _ < __ast_node_function_call->parameters->count; _++) {
+    
+        set_byte_code_of_ast(
+            __convertor,
+            __ast_node_function_call->parameters->operator[](_)->expression_instructions
+        );
+
+        __convertor->current_block->block->add(
+            byte_code::Byte_Code::generate(
+                STACK_MEMORY_ALLOCATION,
+                __ast_node_function_call->parameters->operator[](_)->representive_type->get_size()
+            )
+        );
+
+        __convertor->current_block->current_stack_size +=
+            __ast_node_function_call->parameters->operator[](_)->representive_type->get_size();
+
+    }
+
+    __convertor->force_memory_allocation = _prev_force_allocation_value;
+    __convertor->only_call = _prev_call_value;
+
+    // Load address 
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            LOAD,
+            __convertor->current_block->current_stack_size - _return_address_address
+        )
+    );
+
+    // Memory copy of address
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            MEMORY_COPY_ADDRESS,
+            0
+        )
+    );   
+
+    __convertor->memory_copy_stack_frame_before_go->add(
+        __convertor->current_block->block->last->object
+    );
+
+    // Call function
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            GO,
+            __ast_node_function_call->function_declaration->body_position
+        )
+    );
+
+    __convertor->call_byte_codes->add(
+        __convertor->current_block->block->last->object
+    );
+
+    if (__convertor->force_memory_allocation) {
+
+        __convertor->current_block->block->add(
+            byte_code::Byte_Code::generate(
+                STACK_MEMORY_ALLOCATION,
+                __ast_node_function_call->function_declaration->representive_type->get_size()
+            )
+        );
+
+        _backup_current_stack_size += 
+            __ast_node_function_call->function_declaration->representive_type->get_size();
+
+    }
+
+    if (__convertor->only_call)
+
+        __convertor->current_block->block->add(
+            byte_code::Byte_Code::generate(
+                LOAD,
+                __convertor->force_memory_allocation ? __ast_node_function_call->function_declaration->representive_type->get_size()
+                    : 0
+            )
+        );         
+
+    __convertor->current_block->current_stack_size = 
+        _backup_current_stack_size;
+
+}
+
+void parser::set_byte_code_of_ast_node_pointer_operations(Convertor* __convertor, Ast_Node_Pointer_Operation* __ast_node_pointer_operation) {
+
+    __convertor->print("--> Get Byte Code Of Ast Node Pointer Operations <--");
+
+    bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 1;
+    bool _prev_call_value = __convertor->only_call; __convertor->only_call = 1;
+
+    set_byte_code_of_ast(
+        __convertor,
+        __ast_node_pointer_operation->value
+    );
+
+    __convertor->force_memory_allocation = _prev_force_allocation_value;
+    __convertor->only_call = _prev_call_value;
+
+    if (__ast_node_pointer_operation->pointer_level > 0) {
+
+        __convertor->current_block->block->add(
+            byte_code::Byte_Code::generate(
+                LOAD,
+                0
+            )
+        );
+
+        __convertor->current_block->block->add(
+            byte_code::Byte_Code::generate(
+                MEMORY_COPY_STACK_FRAME,
+                0
+            )
+        );
+
+    }
+
+    else
+
+        for (int _ = 0; _ < __ast_node_pointer_operation->pointer_level * -1; _++)
+
+            __convertor->current_block->block->add(
+                byte_code::Byte_Code::generate(
+                    GET_ADDRESS_FROM_STACK,
+                    0
+                )
+            );
+
+}
+
+void parser::set_byte_code_of_ast_node_parenthesis(Convertor* __convertor, Ast_Node_Parenthesis* __ast_node_parenthesis) {
+
+    __convertor->print("--> Get Byte Code Of Ast Node Pointer Operations <--");
+
+    set_byte_code_of_ast(
+        __convertor,
+        __ast_node_parenthesis->expression
+    );
+
+}
+
+void parser::set_byte_code_of_ast_node_byte_code(Convertor* __convertor, Ast_Node_Byte_Code* __ast_node_byte_code) {
+
+    __convertor->print("--> Get Byte Code Of Ast Node Byte Code <--");
+
+    bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 0;
+    bool _prev_call_value = __convertor->only_call; __convertor->only_call = 0;
+
+    set_byte_code_of_ast(
+        __convertor,
+        __ast_node_byte_code->code
+    );
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            STACK_MEMORY_ALLOCATION,
+            1
+        )
+    );
+
+    __convertor->current_block->current_stack_size ++;
+
+    set_byte_code_of_ast(
+        __convertor,
+        __ast_node_byte_code->argument
+    );
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            STACK_MEMORY_ALLOCATION,
+            2
+        )
+    );
+
+    __convertor->current_block->current_stack_size += 2;
+
+    __convertor->force_memory_allocation = _prev_force_allocation_value;
+    __convertor->only_call = _prev_call_value;
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            LOAD,
+            3
+        )
+    );
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            LOAD,
+            2
+        )
+    );
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            CUSTOM_BYTE_CODE,
+            0
+        )
+    );
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            STACK_MEMORY_DEALLOCATION,
+            3
+        )
+    ); 
+
+    __convertor->current_block->current_stack_size -= 3;
+
+}
+
+void parser::set_byte_code_of_ast_node_return_key_word(Convertor* __convertor, Ast_Node_Return_Key_Word* __ast_node_return_key_word) {
+
+    __convertor->print("--> Get Byte Code Of Ast Node Return Key Word <--");
+
+    set_byte_code_of_ast(
+        __convertor,
+        __ast_node_return_key_word->expression
+    );
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            LOAD,
+            __convertor->current_block->current_stack_size
+        )
+    );
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            MEMORY_COPY,
+            __ast_node_return_key_word->expression->representive_type->get_size()
+        )
+    ); 
+
+}
+

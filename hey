@@ -1,0 +1,156 @@
+int _body_position = 
+        __convertor->add_block();
+
+    __ast_node_for->body_position = _body_position;
+
+    int _prev_stack_position = 
+        __convertor->current_block->current_stack_size;
+
+    __ast_node_for->previous_stack_position = _prev_stack_position;
+
+    byte_code::Byte_Code_Block* _byte_code_block =
+        __convertor->blocks->operator[](_body_position);
+
+    byte_code::Byte_Code_Block* _previous_code_block =
+        __convertor->current_block;
+
+    __convertor->current_block = 
+        _byte_code_block;
+
+    __convertor->current_block->current_stack_size = 
+        _prev_stack_position;
+
+    // //
+
+    for (int _ = 0; _ < __ast_node_for->variable_declarations->count; _++)
+
+        set_byte_code_of_ast(
+            __convertor,
+            __ast_node_for->variable_declarations->operator[](_)
+        );
+
+    __ast_node_for->variable_declarations_instructions_count = 
+        __convertor->current_block->block->count;
+
+    // Return address 
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            STACK_MEMORY_ALLOCATION,
+            2
+        )
+    );
+
+    __convertor->current_block->current_stack_size += 2;
+
+    // Condition
+    bool _prev_call = __convertor->only_call; __convertor->only_call = 1;
+
+    set_byte_code_of_ast(
+        __convertor,
+        __ast_node_for->condition->constructor_call
+    );
+
+    __convertor->only_call = _prev_call;
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            CHECK_NOT,
+            3 // Instructions count to jumps
+        )
+    );
+
+    // Deallocation
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            STACK_MEMORY_DEALLOCATION,
+            __convertor->current_block->current_stack_size - _prev_stack_position
+        )
+    );
+
+    // Load return address
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            LOAD,
+            0
+        )
+    );
+
+    // Goto to return address
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            GO_STACK_FRAME,
+            0
+        )
+    );
+
+    __convertor->set_block(
+        __ast_node_for->body->code
+    );
+
+    // Set execution
+    for (int _ = 0; _ < __ast_node_for->execution->count; _++)
+
+        set_byte_code_of_ast(
+            __convertor,
+            __ast_node_for->execution->operator[](_)
+        );
+
+    // Deallocation
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            STACK_MEMORY_DEALLOCATION,
+            __convertor->current_block->current_stack_size - _prev_stack_position + __ast_node_for->variables_declarations_size
+        )
+    );
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            GO,
+            _body_position
+        )
+    );
+ 
+    __convertor->call_byte_codes->add(
+        __convertor->current_block->block->last->object
+    );
+
+    __ast_node_for->go_back = 
+        __convertor->current_block->block->last->object;
+
+    __convertor->for_control_struct_go_back->add(
+        __ast_node_for
+    );
+
+
+
+    __convertor->current_block = 
+        _previous_code_block;
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            LOAD_INVERTED,
+            __ast_node_for->variables_declarations_size
+        )
+    );
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            MEMORY_COPY_ADDRESS,
+            0
+        )
+    );
+
+    __convertor->memory_copy_stack_frame_before_go->add(
+        __convertor->current_block->block->last->object
+    );
+
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            GO,
+            _body_position
+        )
+    );
+
+    __convertor->call_byte_codes->add(
+        __convertor->current_block->block->last->object
+    );

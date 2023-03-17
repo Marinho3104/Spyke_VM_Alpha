@@ -1,20 +1,42 @@
 
 
 #define STACK_MEMORY_ALLOCATION 0
-#define STACK_MEMORY_DEALLOCATION 2
+#define STACK_MEMORY_DEALLOCATION 1
 
 #define LOAD 4
 #define LOAD_INVERTED 5
 #define LOAD_GLOBAL 6
 
-#define CALL 7
+#define GO 7
+#define GO_STACK_FRAME 8
 
-#define MEMORY_COPY 8
+#define MEMORY_COPY 9
+#define MEMORY_COPY_STACK_FRAME 10
+#define MEMORY_COPY_ADDRESS 11
 
-#define CLOSE_STACK_FRAME 9
+#define GET_ADDRESS_FROM_STACK 12
 
-#define SET_ADDRESS_INTO_STACK 10
-#define GET_ADDRESS_FROM_STACK 11
+#define CUSTOM_BYTE_CODE 13
+
+#define NOP 14
+
+#define BINARY_ADD 16
+#define BINARY_SUB 17
+#define BINARY_MUL 18
+#define BINARY_DIV 19
+#define BINARY_MOD 20
+
+#define CHECK 21
+#define CHECK_NOT 22
+
+#define JUMP 23
+
+#define BINARY_EQUAL_TO 24
+#define BINARY_NOT_EQUAL_TO 25
+#define BINARY_GREATER_THAN 26
+#define BINARY_LESS_THAN 27
+#define BINARY_GREATER_THAN_EQUAL_TO 28
+#define BINARY_LESS_THAN_EQUAL_TO 29
 
 // #define MEMORY_COPY 7 // copy from || copy to
 
@@ -22,8 +44,6 @@
 
 
 // #define CHECK 10
-
-// #define GO 11
 
 
 

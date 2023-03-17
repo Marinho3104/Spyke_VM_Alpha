@@ -71,6 +71,8 @@ namespace parser {
 
         bool is_pointer_struct_type();
 
+        int get_variable_off(Ast_Node_Variable_Declaration*);
+
         int get_size();
 
         static utils::Linked_List <Ast_Node*>* generate(Ast*);
@@ -169,6 +171,8 @@ namespace parser {
         Ast_Node_Function_Declaration* function_declaration;
         Token* function_token_name;
 
+        bool expression_helper;
+
         ~Ast_Node_Function_Call(); Ast_Node_Function_Call(Token*);
 
         void set_parameters(Ast*);
@@ -186,6 +190,8 @@ namespace parser {
     struct Ast_Node_Implicit_Value : Ast_Node {
 
         int implicit_value_position;
+
+        Token* remove_token;
 
         ~Ast_Node_Implicit_Value(); Ast_Node_Implicit_Value(Type_Information*, int);
 
@@ -231,6 +237,8 @@ namespace parser {
         bool is_pointer_accessing;
 
         ~Ast_Node_Accessing(); Ast_Node_Accessing(Ast_Node*, bool);
+
+        void set_representive_type(Ast*);
 
         void set_accessing(Ast*);
 
@@ -304,6 +312,8 @@ namespace parser {
         Ast_Node_Variable_Declaration* condition;
         Ast_Node_Code_Block* body;
 
+        int previous_stack_position, body_position;
+
         ~Ast_Node_While(); Ast_Node_While(Ast_Node_Code_Block*);
 
         void set_condition(Ast*);
@@ -318,6 +328,8 @@ namespace parser {
 
         Ast_Node_Variable_Declaration* condition;
         Ast_Node_Code_Block* body;
+
+        int previous_stack_position, body_position;
 
         ~Ast_Node_Do_While(); Ast_Node_Do_While(Ast_Node_Code_Block*);
 
@@ -334,6 +346,8 @@ namespace parser {
         Ast_Node_Variable_Declaration* condition;
         Ast_Node_Code_Block* body;
 
+        bool next_if_statement;
+
         ~Ast_Node_If(); Ast_Node_If(Ast_Node_Code_Block*);
 
         void set_condition(Ast*);
@@ -348,6 +362,8 @@ namespace parser {
 
         Ast_Node_Variable_Declaration* condition;
         Ast_Node_Code_Block* body;
+
+        bool next_if_statement;
 
         ~Ast_Node_Else_If(); Ast_Node_Else_If(Ast_Node_Code_Block*);
 
@@ -377,6 +393,10 @@ namespace parser {
         utils::Linked_List <Ast_Node_Expression*>* execution;
         Ast_Node_Variable_Declaration* condition;
         Ast_Node_Code_Block* body;
+
+        int previous_stack_position, body_position, variables_declarations_size, variable_declarations_instructions_count;
+
+        byte_code::Byte_Code* go_back;
 
         ~Ast_Node_For(); Ast_Node_For(Ast_Node_Code_Block*);
 
