@@ -13,6 +13,7 @@
 
 #include <iostream>
 #include <string.h>
+#include <unistd.h>
 
 
 parser::Ast_Node::~Ast_Node() {}
@@ -43,7 +44,7 @@ void parser::Ast_Node_Name_Space::set_declarations(Ast* __ast) {
                 { utils::Linked_List <Ast_Node*>* _ = Ast_Node_Variable_Declaration::generate(__ast); declarations->join(_); delete _; break; }
             case AST_NODE_FUNCTION_DECLARATION: declarations->add(Ast_Node_Function_Declaration::generate(__ast)); break;
             case AST_NODE_BYTE_CODE: declarations->add(Ast_Node_Byte_Code::generate(__ast)); break;
-            case AST_NODE_CONTRACT: declarations->add(Ast_Node_Contract_Declaration::generate(__ast)); break;
+            case AST_NODE_CONTRACT_DECLARATION: declarations->add(Ast_Node_Contract_Declaration::generate(__ast)); break;
 
             default: throw Unexpected_Token_Ast(__ast->code_information, __ast->get_token(0)); break;
         }
@@ -217,7 +218,7 @@ void parser::Ast_Node_Code_Block::set_code(Ast* __ast, bool __once = 0) {
             case AST_NODE_CODE_BLOCK: code->add(Ast_Node_Code_Block::generate(__ast)); break;
             case AST_NODE_VARIABLE_DECLARATION: 
                 { utils::Linked_List <Ast_Node*>* _ = Ast_Node_Variable_Declaration::generate(__ast); code->join(_); delete _; break; }
-            case AST_NODE_EXPRESSION: case AST_NODE_VARIABLE: case AST_NODE_FUNCTION_CALL: case AST_NODE_IMPLICIT_VALUE: 
+            case AST_NODE_EXPRESSION: case AST_NODE_VARIABLE: case AST_NODE_FUNCTION_CALL: case AST_NODE_IMPLICIT_VALUE: case AST_NODE_TYPE_CONVERSION:
                 case AST_NODE_POINTER_OPERATION: case AST_NODE_PARENTHESIS: case AST_NODE_CONSTRUCTOR_CALL: case AST_NODE_CAST:
                 
                     code->add(Ast_Node_Expression::generate(__ast)); 
@@ -295,24 +296,40 @@ parser::Ast_Node_Code_Block* parser::Ast_Node_Code_Block::generate(Ast* __ast) {
 
 
 
-parser::Ast_Node_Contract_Declaration::~Ast_Node_Contract_Declaration() {}
+parser::Ast_Node_Contract_Declaration::~Ast_Node_Contract_Declaration() { body->~Ast_Node_Name_Space(); free(body); }
 
-parser::Ast_Node_Contract_Declaration::Ast_Node_Contract_Declaration() 
-    : Ast_Node(AST_NODE_CONTRACT, 0) {}
+parser::Ast_Node_Contract_Declaration::Ast_Node_Contract_Declaration(Ast_Node_Name_Space* __body) 
+    : Ast_Node(AST_NODE_CONTRACT_DECLARATION, 0), body(__body) {}
 
 parser::Ast_Node_Contract_Declaration* parser::Ast_Node_Contract_Declaration::generate(Ast* __ast) {
 
     __ast->print("--> Ast Node Contract Declaration <--");
 
+    utils::Linked_List <Ast_Node*>* _struct_declaration = 
+        Ast_Node_Struct_Declaration::generate(__ast);
+
+    _struct_declaration->destroy_content = 1;
+
+    Ast_Node_Contract_Declaration* _contract_declaration_node =     
+        (Ast_Node_Contract_Declaration*) malloc(sizeof(Ast_Node_Contract_Declaration));
+
+    new (_contract_declaration_node) Ast_Node_Contract_Declaration(
+        ( (Ast_Node_Struct_Declaration*) _struct_declaration->first->object)->body
+    );
+
+    (( Ast_Node_Struct_Declaration*) _struct_declaration->first->object)->body = 0;
+
+    delete _struct_declaration;
+
     __ast->print("--> Ast Node Contract Declaration End <--");
 
-    exit(1);
+    return _contract_declaration_node;
 
 }
 
 
 
-parser::Ast_Node_Struct_Declaration::~Ast_Node_Struct_Declaration() { body->~Ast_Node_Name_Space(); free(body); delete representive_type; }
+parser::Ast_Node_Struct_Declaration::~Ast_Node_Struct_Declaration() { if (body) body->~Ast_Node_Name_Space(); free(body); delete representive_type; }
 
 parser::Ast_Node_Struct_Declaration::Ast_Node_Struct_Declaration(Token* __struct_token_name, Name_Space* __struct_name_space) 
     : Ast_Node(AST_NODE_STRUCT_DECLARATION, 0), struct_token_name(__struct_token_name), body_defined(0) {
@@ -449,11 +466,12 @@ int parser::Ast_Node_Struct_Declaration::get_size() {
     for (int _ = 0; _ < body->declarations->count; _++) 
 
         if (
-            body->declarations->operator[](_)->node_type == AST_NODE_VARIABLE_DECLARATION
+            body->declarations->operator[](_)->node_type == AST_NODE_VARIABLE_DECLARATION &&
+                ! ( (Ast_Node_Variable_Declaration*) body->declarations->operator[](_) )->is_static
         ) 
             _size += (
                 (Ast_Node_Variable_Declaration*) body->declarations->operator[](_)
-            )->representive_type->declaration->get_size();
+            )->representive_type->get_size();
 
     return _size;
 
@@ -487,7 +505,7 @@ utils::Linked_List <parser::Ast_Node*>*  parser::Ast_Node_Struct_Declaration::ge
 
     if (_previous_struct_declaration) {
 
-        if (_previous_struct_declaration->body_defined)
+        if (_previous_struct_declaration->body_defined && __ast->get_token(0)->id != END_INSTRUCTION)
 
             throw Redefinition_Struct_Declaration_Ast(
                 __ast->code_information, 
@@ -611,10 +629,43 @@ utils::Linked_List <parser::Ast_Node*>* parser::Ast_Node_Struct_Declaration::gen
 
 
 parser::Ast_Node_Variable_Declaration::~Ast_Node_Variable_Declaration() 
-    { delete representive_type; if (constructor_call) constructor_call->~Ast_Node_Constructor_Call(); free(constructor_call); }
+    { delete representive_type; if (constructor_call) constructor_call->~Ast_Node_Constructor_Call(); free(constructor_call);
+        if (array_size) array_size->~Ast_Node_Constructor_Call(); free(array_size); }
 
 parser::Ast_Node_Variable_Declaration::Ast_Node_Variable_Declaration(Type_Information* __type, Token* __variable_token_name, bool __is_static)
-    : Ast_Node(AST_NODE_VARIABLE_DECLARATION, __type), variable_token_name(__variable_token_name), is_static(__is_static), constructor_call(0) {}
+    : Ast_Node(AST_NODE_VARIABLE_DECLARATION, __type), variable_token_name(__variable_token_name), is_static(__is_static), constructor_call(0), array_size(0) {}
+
+void parser::Ast_Node_Variable_Declaration::set_array_size_expression(Ast* __ast) {
+
+    if (
+        __ast->get_token(0)->id != OPEN_BRACKET
+    ) return;
+
+    __ast->tokens_position ++;
+
+    representive_type->pointer_level ++;
+
+    Type_Information* _type_pointer = 
+        Type_Information::generate_primitive_type(__ast, PRIMITIVE_TYPE_POINTER);
+
+    array_size = 
+        Ast_Node_Constructor_Call::generate(
+            __ast,
+            _type_pointer,
+            Ast_Node_Expression::generate(__ast)
+        );
+
+    if (
+        __ast->get_token(0)->id != CLOSE_BRACKET
+    ) 
+        throw Expected_Token_Ast(
+            __ast->code_information,
+            __ast->get_token(0), CLOSE_BRACKET
+        );
+
+    __ast->tokens_position ++;
+
+}
 
 utils::Linked_List <parser::Ast_Node*>* parser::Ast_Node_Variable_Declaration::generate_struct_declaration_variables(
     Ast* __ast, parser::Ast_Node_Struct_Declaration* __struct_declaration) {
@@ -687,6 +738,8 @@ utils::Linked_List <parser::Ast_Node*>* parser::Ast_Node_Variable_Declaration::g
             _variable_type, _variable_token_name, 0
         );
 
+        _variable_declaration_node->set_array_size_expression(__ast);
+
         _nodes->add(
             _variable_declaration_node
         );
@@ -748,6 +801,8 @@ parser::Ast_Node_Variable_Declaration* parser::Ast_Node_Variable_Declaration::ge
         );
 
         __ast->tokens_position++;
+
+        _variable_declaration_node->set_array_size_expression(__ast);
 
         __ast->name_space_chain->last->object->declaration_tracker->variable_declarations->add(
             _variable_declaration_node
@@ -832,7 +887,7 @@ parser::Ast_Node_Function_Declaration::~Ast_Node_Function_Declaration()
     { delete representive_type; delete parameters_type; body->~Ast_Node_Code_Block(); free(body); name_space->~Name_Space(); free(name_space); if (this_token_name) this_token_name->~Token(); free(this_token_name); delete parameters; }
 
 parser::Ast_Node_Function_Declaration::Ast_Node_Function_Declaration(Type_Information* __return_type, Token* __function_token_name, Name_Space* __name_space, bool __is_static)  
-    : Ast_Node(AST_NODE_FUNCTION_DECLARATION, __return_type), function_token_name(__function_token_name), name_space(__name_space), is_static(__is_static), body_defined(0), destructor(0), this_token_name(0), body_position(-1) { 
+    : Ast_Node(AST_NODE_FUNCTION_DECLARATION, __return_type), function_token_name(__function_token_name), name_space(__name_space), is_static(__is_static), body_defined(0), destructor(0), this_token_name(0), body_position(-1), forward_declaration(0) { 
 
         body = (Ast_Node_Code_Block*) malloc(sizeof(Ast_Node_Code_Block));  new (body) Ast_Node_Code_Block(0, __name_space); 
 
@@ -1085,17 +1140,26 @@ parser::Ast_Node_Function_Declaration* parser::Ast_Node_Function_Declaration::ge
 
     _function_declaration_node->set_parameters(__ast);
 
-    if (
-        Ast_Node_Function_Declaration* _previous_function_declaration_node = 
+    Ast_Node_Function_Declaration* _previous_function_declaration_node = 
             __ast->name_space_chain->last->object->declaration_tracker->get_function_declaration(
                 _function_token_name->identifier, _function_declaration_node->parameters_type, _static_token, 0
-            )
+            );
+
+    if (
+        _previous_function_declaration_node && _previous_function_declaration_node->body_defined && __ast->get_token(0)->id != END_INSTRUCTION
     )
         throw Redefinition_Function_Declaration_Ast(
             __ast->code_information,
             _previous_function_declaration_node->function_token_name,
             _function_token_name
         );
+
+    else if (
+        _previous_function_declaration_node && __ast->get_token(0)->id != END_INSTRUCTION
+    )
+
+        _previous_function_declaration_node->forward_declaration = 
+            _function_declaration_node;
 
     get_current_declaration_tracker(__ast)->function_declarations->add(
         _function_declaration_node
@@ -1418,8 +1482,6 @@ void parser::Ast_Node_Expression::set_representive_type(Ast* __ast) {
 
                 delete _function_call_parameters_type;
 
-                free(_token_function_name);
-
                 if (!_token_function_declaration) 
                     throw Undefined_Function_Declaration_Ast(__ast->code_information, _token_ids->operator[](_), _token_ids->operator[](_)->position_information.column);
 
@@ -1428,7 +1490,52 @@ void parser::Ast_Node_Expression::set_representive_type(Ast* __ast) {
                 _function_call_node->representive_type = _token_function_declaration->representive_type;
                 _function_call_node->function_declaration = _token_function_declaration;
 
-                _values->getDataLinkedList(_)->object = _function_call_node;
+                // For a pointer operation this if converts into the correct type 
+                // Dependent the type of pointer it is
+                if ( _values->operator[](_)->representive_type->pointer_level) {
+
+                    // Type conversion for type
+                    Ast_Node_Type_Conversion* _type_conversion_node;
+
+                    // Return the pointer type (eg. in [] operations )
+
+                    if ( ! strcmp(_token_function_name, FUNCTION_OPERATOR_BRACKET_FUNCTION_NAME) ) {
+
+                        // Get down a pointer level to get the pointer type
+                        _values->operator[](_)->representive_type->pointer_level --;
+
+                        _type_conversion_node = 
+                            (Ast_Node_Type_Conversion*) malloc(sizeof(Ast_Node_Type_Conversion));
+
+                        new (_type_conversion_node) Ast_Node_Type_Conversion(
+                            _values->operator[](_)->representive_type->get_copy(), _function_call_node
+                        );
+
+                        _values->operator[](_)->representive_type->pointer_level ++;                        
+
+                    }
+
+                    // Return a pointer of type
+                    else {
+
+                        _type_conversion_node = 
+                            (Ast_Node_Type_Conversion*) malloc(sizeof(Ast_Node_Type_Conversion));
+
+                        new (_type_conversion_node) Ast_Node_Type_Conversion(
+                            _values->operator[](_)->representive_type->get_copy(), _function_call_node
+                        );
+
+                    }
+
+                    _values->getDataLinkedList(_)->object = _type_conversion_node;
+
+                }
+
+                else _values->getDataLinkedList(_)->object = _function_call_node;
+
+                free(_token_function_name);
+
+                
 
                 if ( _values->count > 1) {
 
@@ -1528,13 +1635,14 @@ parser::Ast_Node_Expression* parser::Ast_Node_Expression::generate(Ast* __ast) {
 
 int parser::Ast_Node_Expression::get_operation_priority(int __operation_id) {
 
-    if (__operation_id >= FUNCTION_OPERATOR_MULTIPLICATION && __operation_id <= FUNCTION_OPERATOR_MODULOS) return 0;
-    if (__operation_id >= FUNCTION_OPERATOR_PLUS && __operation_id <= FUNCTION_OPERATOR_MINUS) return 1;
-    if (__operation_id >= FUNCTION_OPERATOR_BITWISE_AND && __operation_id <= FUNCTION_OPERATOR_BITWISE_RIGHT_SHIFT) return 2;
-    if (__operation_id >= FUNCTION_OPERATOR_AND && __operation_id <= FUNCTION_OPERATOR_OR) return 3;
-    if (__operation_id >= FUNCTION_OPERATOR_EQUAL_TO && __operation_id <= FUNCTION_OPERATOR_LESS_THAN_EQUAL_TO) return 4;
+    if ( ( __operation_id >= FUNCTION_OPERATOR_INCREMENT && __operation_id <= FUNCTION_OPERATOR_BRACKET ) || __operation_id == FUNCTION_OPERATOR_NOT || __operation_id == FUNCTION_OPERATOR_BITWISE_NOT ) return 0;
+    if (__operation_id >= FUNCTION_OPERATOR_MULTIPLICATION && __operation_id <= FUNCTION_OPERATOR_MODULOS) return 1;
+    if (__operation_id >= FUNCTION_OPERATOR_PLUS && __operation_id <= FUNCTION_OPERATOR_MINUS) return 2;
+    if (__operation_id >= FUNCTION_OPERATOR_BITWISE_AND && __operation_id <= FUNCTION_OPERATOR_BITWISE_RIGHT_SHIFT) return 3;
+    if (__operation_id >= FUNCTION_OPERATOR_AND && __operation_id <= FUNCTION_OPERATOR_OR) return 4;
+    if (__operation_id >= FUNCTION_OPERATOR_EQUAL_TO && __operation_id <= FUNCTION_OPERATOR_LESS_THAN_EQUAL_TO) return 5;
 
-    return 5;
+    return 6;
 
 }
 
@@ -1552,6 +1660,7 @@ parser::Ast_Node* parser::Ast_Node_Expression::get_value(Ast* __ast) {
     case AST_NODE_PARENTHESIS: return Ast_Node_Parenthesis::generate(__ast); break;
     case AST_NODE_FUNCTION_CALL: return Ast_Node_Function_Call::generate(__ast); break;
     case AST_NODE_IMPLICIT_VALUE: return Ast_Node_Implicit_Value::generate(__ast); break;
+    case AST_NODE_TYPE_CONVERSION: return Ast_Node_Type_Conversion::generate(__ast); break;
     case AST_NODE_POINTER_OPERATION: return Ast_Node_Pointer_Operation::generate(__ast); break;
     case AST_NODE_EXPRESSION: return Ast_Node_Expression::generate_single_parameter(__ast); break; 
     case AST_BITWISE_NOT: case AST_NODE_CONSTRUCTOR_CALL: return Ast_Node_Constructor_Call::generate(__ast); break;
@@ -1838,17 +1947,7 @@ parser::Ast_Node_Pointer_Operation::~Ast_Node_Pointer_Operation()
 parser::Ast_Node_Pointer_Operation::Ast_Node_Pointer_Operation(utils::Linked_List <Token*>* __pointer_operations, int __pointer_level) 
     : Ast_Node(AST_NODE_POINTER_OPERATION, 0), pointer_operations(__pointer_operations), pointer_level(__pointer_level), destroy_value(1) {}
 
-void parser::Ast_Node_Pointer_Operation::set_value(Ast* __ast) {
-
-    switch (get_node_type(__ast))
-    {
-    case AST_NODE_VARIABLE: value = Ast_Node_Variable::generate(__ast); break;
-    case AST_NODE_FUNCTION_CALL: value = Ast_Node_Function_Call::generate(__ast); break;
-    case AST_NODE_IMPLICIT_VALUE: value = Ast_Node_Implicit_Value::generate(__ast); break;
-    default: throw Unexpected_Token_Ast(__ast->code_information, __ast->get_token(0)); break;
-    }
-
-}
+void parser::Ast_Node_Pointer_Operation::set_value(Ast* __ast) { value = get_value(__ast); }
 
 void parser::Ast_Node_Pointer_Operation::set_representive_value(Ast* __ast) {
 
@@ -1857,6 +1956,7 @@ void parser::Ast_Node_Pointer_Operation::set_representive_value(Ast* __ast) {
     representive_type->pointer_level += pointer_level;
 
     if (representive_type->pointer_level < 0) 
+
         throw Pointer_Operations_Below_0_Ast(__ast->code_information, pointer_operations);
     
 }
@@ -2511,6 +2611,9 @@ void parser::Ast_Node_Return_Key_Word::confirm_return_type(Ast* __ast, int __ini
             _function_declaration->representive_type
         )
     ) throw Function_Return_And_Given_Return_Not_The_Same(__ast->code_information, __ast->get_token(-1), __inicial_position);
+
+    function_return_type = 
+        _function_declaration->representive_type;
 
 }
 
@@ -3197,3 +3300,56 @@ parser::Ast_Node_Control_Structs_Key_Words* parser::Ast_Node_Control_Structs_Key
 
 }
 
+
+
+parser::Ast_Node_Type_Conversion::~Ast_Node_Type_Conversion() { delete representive_type; value->~Ast_Node(); free(value); }
+
+parser::Ast_Node_Type_Conversion::Ast_Node_Type_Conversion(Type_Information* __representive_value, Ast_Node* __value) 
+    : Ast_Node(AST_NODE_TYPE_CONVERSION, __representive_value), value(__value) {}
+
+parser::Ast_Node_Type_Conversion* parser::Ast_Node_Type_Conversion::generate(Ast* __ast) {
+
+    __ast->print(" --> Ast Node Type Conversion <--");
+
+    __ast->tokens_position++;
+
+    Type_Information* _type_conversion = 
+        Type_Information::generate(__ast, 1);
+
+    if (
+        __ast->get_token(0)->id != CLOSE_BRACES
+    )
+        throw Expected_Token_Ast(
+            __ast->code_information,
+            __ast->get_token(0),
+            CLOSE_BRACES
+        );
+
+    __ast->tokens_position++;
+
+    if (
+        __ast->get_token(0)->id != CLOSE_BRACES
+    )
+        throw Expected_Token_Ast(
+            __ast->code_information,
+            __ast->get_token(0),
+            CLOSE_BRACES
+        );
+
+    __ast->tokens_position++;
+
+    Ast_Node* _value = 
+        get_value(__ast);
+
+    Ast_Node_Type_Conversion* _type_conversion_node = 
+        (Ast_Node_Type_Conversion*) malloc(sizeof(Ast_Node_Type_Conversion));
+
+    new (_type_conversion_node) Ast_Node_Type_Conversion(
+        _type_conversion, _value
+    );
+
+    __ast->print(" --> Ast Node Type Conversion End <--");
+
+    return _type_conversion_node;
+
+}

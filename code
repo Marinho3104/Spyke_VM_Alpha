@@ -1,0 +1,101 @@
+
+namespace built_ins {
+
+    struct Void;
+
+    struct Bool;
+
+    struct Int {
+
+        ~Int() {}
+
+        Int() {}
+
+
+        int add(int __add) { exec 4, 4; exec 4, 6; exec 12, 0; exec 16, 4; return __add; }
+
+        int sub(int __sub) { exec 4, 4; exec 4, 6; exec 12, 0; exec 17, 4; return __sub; }
+
+        int mul(int __mul) { exec 4, 4; exec 4, 6; exec 12, 0; exec 18, 4; return __mul; }
+
+        int div(int __div) { exec 4, 4; exec 4, 6; exec 12, 0; exec 19, 4; return __div; }
+
+        int mod(int __mod) { exec 4, 4; exec 4, 6; exec 12, 0; exec 20, 4; return __mod; }
+
+
+        void equal(int) { exec 4, 4; exec 4, 6; exec 12, 0; exec 9, 4; } 
+
+        void add_assign(int __add) { exec 4, 6; exec 12, 0; exec 4, 4; exec 16, 4; }
+
+
+        Int(int __eq) { *this = __eq; }
+
+
+        int increment() { exec 4, 2; exec 12, 0; exec 30, 4; return *this - 1; }
+
+        int decrement() { exec 4, 2; exec 12, 0; exec 31, 4; return *this + 1; }
+
+        int increment_left() { exec 4, 2; exec 12, 0; exec 30, 4; return *this; }
+
+        int decrement_left() { exec 4, 2; exec 12, 0; exec 31, 4; return *this; }
+
+
+        bool equal_to(int) { bool _rtr; exec 4, 1; exec 4, 5; exec 4, 7; exec 12, 0; exec 24, 4; return _rtr; }
+
+        bool not_equal_to(int) { bool _rtr; exec 4, 1; exec 4, 5; exec 4, 7; exec 12, 0; exec 25, 4; return _rtr; }
+
+        bool greater_than(int) { bool _rtr; exec 4, 1; exec 4, 5; exec 4, 7; exec 12, 0; exec 26, 4; return _rtr; }
+
+        bool less_than(int) { bool _rtr; exec 4, 1; exec 4, 5; exec 4, 7; exec 12, 0; exec 27, 4; return _rtr; }
+
+        bool greater_than_equal_to(int) { bool _rtr; exec 4, 1; exec 4, 5; exec 4, 7; exec 12, 0; exec 28, 4; return _rtr; }
+
+        bool less_than_equal_to(int) { bool _rtr; exec 4, 1; exec 4, 5; exec 4, 7; exec 12, 0; exec 29, 4; return _rtr; }
+
+    };
+    
+    struct Bool {
+
+        ~Bool() {
+
+        }
+
+        Bool() {
+
+        }
+
+        Bool(bool) { exec 4, 1; exec 4, 3; exec 12, 0; exec 9, 1; }
+        
+        Bool(int) { exec 4, 4; exec 4, 6; exec 12, 0; exec 9, 1; }
+
+    };
+
+
+    struct Pointer {
+
+        Pointer() {}
+
+        void equal(int) { exec 4, 4; exec 4, 6; exec 12, 0; exec 9, 2; }
+
+        void add_assign(int) { exec 4, 6; exec 12, 0; exec 4, 4; exec 16, 2; }
+
+        void add_assign(int __c, int __s) { __c = __c * __s; exec 4, 8; exec 4, 10; exec 12, 0; exec 4, 8; exec 16, 2; }
+
+    };
+
+}
+
+namespace test {
+
+    void func() {
+
+        bool val = bool(100);
+
+        exec 4, 1;
+
+    }
+
+}
+
+
+

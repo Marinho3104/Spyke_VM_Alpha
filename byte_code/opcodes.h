@@ -1,7 +1,7 @@
 
 
-#define STACK_MEMORY_ALLOCATION 0
-#define STACK_MEMORY_DEALLOCATION 1
+#define STACK_MEMORY_ALLOCATION 1
+#define STACK_MEMORY_DEALLOCATION 2
 
 #define LOAD 4
 #define LOAD_INVERTED 5
@@ -27,9 +27,9 @@
 #define BINARY_MOD 20
 
 #define CHECK 21
-#define CHECK_NOT 22
 
 #define JUMP 23
+#define JUMP_INVERTED 34
 
 #define BINARY_EQUAL_TO 24
 #define BINARY_NOT_EQUAL_TO 25
@@ -38,12 +38,28 @@
 #define BINARY_GREATER_THAN_EQUAL_TO 28
 #define BINARY_LESS_THAN_EQUAL_TO 29
 
-// #define MEMORY_COPY 7 // copy from || copy to
+#define BINARY_INCREMENT 30
+#define BINARY_DECREMENT 31
 
-// #define EXECUTE_BYTE_CODE 8
+#define INITIAL_BLOCK_END 32
+
+#define HELPER 33
 
 
-// #define CHECK 10
+// Stack memory allocation -- mode
+
+#define STACK_MEMORY_ALLOCATION_MODE_MUL 0
+
+// LOAD INVERTED -- mode
+
+#define LOAD_INVERTED_MODE_MUL 0
+
+// LOAD -- mode
+
+#define LOAD_MODE_ADD 0
+#define LOAD_MODE_MUL 1
+
+#define LOAD_STACK_FRAME_MODE_ADD 2
 
 
 

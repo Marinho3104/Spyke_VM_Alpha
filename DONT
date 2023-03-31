@@ -1,0 +1,68 @@
+            // Here there is 2 options
+            // Variable is static or not
+
+            // Variable is static 
+            if ( _variable_node->variable_declaration->is_static ) {
+
+                // Cause the variable is static, we can ignore the previous loaded value ( a.k.a remove )
+                // And just add byte code with LOAD_GLOBAL with position of variable 
+
+                // Add LOAD_GLOBAL byte code
+                __convertor->set_byte_code_load_global(
+                    _variable_node->variable_declaration->stack_position,
+                    __convertor->blocks->operator[](0)
+                );
+
+            }
+
+            // Not static
+            else {
+
+                // The Idea is, here we have already the variable loaded 
+                // so is just to subtract size of the others variables inside the struct until reacth the desired variable
+
+                _load_byte_code->argument -=
+
+                    // Getting the offside size of variables before desired variable
+                    _struct_declaration_node->get_variable_off(
+                        _variable_node->variable_declaration
+                    );
+
+            }
+            
+            
+            
+                        
+                // Again have 2 options
+                // Variable is static or not
+
+                // Conversions
+                _struct_declaration_node = 
+                    __ast_node_accessing->value->representive_type->declaration;
+
+                _variable_node = 
+                    (Ast_Node_Variable*) __ast_node_accessing->accessing;
+
+                // If the next variable is static 
+                if ( _variable_node->variable_declaration->is_static ) {
+
+                    // Cause the variable is static, we can ignore the previous loaded value ( a.k.a remove )
+                    // And just add byte code with LOAD_GLOBAL with position of variable 
+
+                    // Remove previous load
+                    delete 
+                        __convertor->current_block->block->remove(
+                            __convertor->current_block->block->count
+                        );
+
+                    // Add LOAD_GLOBAL byte code
+                    __convertor->set_byte_code_load_global(
+                        _variable_node->variable_declaration->stack_position,
+                        __convertor->blocks->operator[](0)
+                    );
+
+                }
+
+                else {
+
+                }

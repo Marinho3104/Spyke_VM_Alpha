@@ -1,0 +1,95 @@
+if (
+        __ast_node_variable_declaration->array_size
+    ) {
+
+        bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 1;
+        bool _prev_call_value = __convertor->only_call; __convertor->only_call = 1;
+
+        set_byte_code_of_ast(
+            __convertor,
+            __ast_node_variable_declaration->array_size
+        );
+
+        __convertor->force_memory_allocation = _prev_force_allocation_value;
+        __convertor->only_call = _prev_call_value;
+
+        __convertor->current_block->custom_sizes->add(
+            __convertor->current_block->current_stack_size - 2
+        );
+
+        __ast_node_variable_declaration->representive_type->pointer_level--;
+
+        __convertor->current_block->custom_sizes_h->add(
+            __ast_node_variable_declaration->representive_type->get_size()
+        );
+
+        __ast_node_variable_declaration->representive_type->pointer_level++;
+
+    }
+
+    __ast_node_variable_declaration->stack_position = 
+        __convertor->current_block->current_stack_size;
+        
+    __convertor->current_block->block->add(
+        byte_code::Byte_Code::generate(
+            STACK_MEMORY_ALLOCATION,
+            __ast_node_variable_declaration->representive_type->get_size()
+        )
+    );
+
+    __convertor->current_block->current_stack_size += 
+        __ast_node_variable_declaration->representive_type->get_size();
+
+    if (
+        __ast_node_variable_declaration->array_size
+    ) {
+
+
+        __convertor->current_block->block->add(
+            byte_code::Byte_Code::generate(
+                HELPER,
+                __convertor->current_block->custom_sizes_h->last->object
+            )
+        );
+
+        __convertor->current_block->block->add(
+            byte_code::Byte_Code::generate(
+                CUSTOM_BYTE_CODE,
+                STACK_MEMORY_ALLOCATION
+            )
+        );
+
+    }
+    
+    
+    
+        if (
+        __ast_node_variable_declaration->array_size
+    ) {
+
+        bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 1;
+        bool _prev_call_value = __convertor->only_call; __convertor->only_call = 1;
+
+        set_byte_code_of_ast(
+            __convertor,
+            __ast_node_variable_declaration->array_size
+        );
+
+        __convertor->force_memory_allocation = _prev_force_allocation_value;
+        __convertor->only_call = _prev_call_value;
+
+        __ast_node_variable_declaration->representive_type->pointer_level--;
+
+        __convertor->current_block->custom_sizes_h->add(
+            __ast_node_variable_declaration->representive_type->get_size()
+        );
+
+        __ast_node_variable_declaration->representive_type->pointer_level++;
+
+        __convertor->current_block->custom_sizes->add(
+            __convertor->current_block->current_stack_size
+        );
+
+        
+
+    }

@@ -1,0 +1,63 @@
+bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 0;
+        bool _prev_call_value = __convertor->only_call; __convertor->only_call = 1;
+
+        set_byte_code_of_ast(
+            __convertor,
+            __ast_node_variable_declaration->array_size
+        );
+
+        __convertor->force_memory_allocation = _prev_force_allocation_value;
+        __convertor->only_call = _prev_call_value;
+
+        __convertor->current_block->block->add(
+            __convertor->current_block->get_load_byte_code(
+                0
+            )
+        );
+
+        __ast_node_variable_declaration->representive_type->pointer_level--;
+
+        __convertor->current_block->custom_sizes_h->add(
+            __ast_node_variable_declaration->representive_type->get_size()
+        );
+
+        __ast_node_variable_declaration->representive_type->pointer_level++;
+
+        __convertor->current_block->custom_sizes->add(
+            __convertor->current_block->current_stack_size - 2
+        );
+
+        __convertor->current_block->block->add(
+            byte_code::Byte_Code::generate(
+                HELPER,
+                __convertor->current_block->custom_sizes_h->last->object
+            )
+        );
+
+        __convertor->current_block->block->add(
+            byte_code::Byte_Code::generate(
+                CUSTOM_BYTE_CODE,
+                LOAD_INVERTED
+            )
+        );
+
+        __convertor->current_block->block->add(
+            byte_code::Byte_Code::generate(
+                MEMORY_COPY,
+                2
+            )
+        ); 
+
+        __convertor->current_block->block->add(
+            byte_code::Byte_Code::generate(
+                HELPER,
+                __convertor->current_block->custom_sizes_h->last->object
+            )
+        );
+
+        __convertor->current_block->block->add(
+            byte_code::Byte_Code::generate(
+                CUSTOM_BYTE_CODE,
+                STACK_MEMORY_ALLOCATION
+            )
+        );     

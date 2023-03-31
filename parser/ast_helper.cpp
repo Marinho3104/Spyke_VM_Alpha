@@ -312,10 +312,14 @@ bool parser::Type_Information::operator==(Type_Information* __to_compare) {
     // std::cout << is_pointer_equal(__to_compare) << std::endl;
     // std::cout << (__to_compare->declaration == declaration && __to_compare->pointer_level == pointer_level) << std::endl;
     // std::cout << "--> Compare End <--" << std::endl;
-
+    
     return (
-        is_pointer_equal(__to_compare) ||
-        (__to_compare->declaration == declaration && __to_compare->pointer_level == pointer_level)
+        is_spyke_type() || __to_compare->is_spyke_type() || is_pointer_equal(__to_compare) ||
+        (
+            ( (__to_compare->declaration == declaration) || declaration->body->name_space->path->operator==(__to_compare->declaration->body->name_space->path) ) && 
+            __to_compare->pointer_level == pointer_level    
+        )
+
     );
 
 }
@@ -328,6 +332,44 @@ bool parser::Type_Information::is_pointer_equal(Type_Information* __to_compare) 
         (declaration->is_pointer_struct_type() && __to_compare->pointer_level) || 
         (pointer_level && __to_compare->declaration->is_pointer_struct_type())
     );
+
+}
+
+bool parser::Type_Information::is_spyke_type() {
+
+    utils::Linked_List <char*>* _spyke_type_path = 
+        new utils::Linked_List <char*>();
+
+    _spyke_type_path->add("built_ins");
+    _spyke_type_path->add("Spyke");
+
+    bool _rtr = 
+        _spyke_type_path->operator==(
+            declaration->body->name_space->path
+        );
+
+    delete _spyke_type_path;
+
+    return _rtr;
+
+}
+
+bool parser::Type_Information::is_void_type() {
+
+    utils::Linked_List <char*>* _spyke_type_path = 
+        new utils::Linked_List <char*>();
+
+    _spyke_type_path->add("built_ins");
+    _spyke_type_path->add("Void");
+
+    bool _rtr = 
+        _spyke_type_path->operator==(
+            declaration->body->name_space->path
+        );
+
+    delete _spyke_type_path;
+
+    return _rtr;
 
 }
 
@@ -630,10 +672,12 @@ int parser::get_node_type(Ast* __ast) {
                 
             }
         
+        
+        case CONTRACT: return AST_NODE_CONTRACT_DECLARATION; break; 
+        case TYPE_CONVERSION: return AST_NODE_TYPE_CONVERSION; break;
         case POINTER: case ADDRESS: return AST_NODE_POINTER_OPERATION; break;
         case ACCESSING: case ACCESSING_POINTER: return AST_NODE_ACCESSING; break;
         case CONTINUE: case BREAK: return AST_NODE_CONTROL_STRUCTS_KEY_WORD; break;
-        case CONTRACT: return AST_NODE_CONTRACT; break; 
 
         // No Return
         case STATIC: __ast->tokens_position++; break;
@@ -877,6 +921,7 @@ parser::Ast_Node_Struct_Declaration* parser::get_struct_declaration(Ast* __ast, 
     if (_name_space->type == NAME_SPACE_TYPE_CODE_BLOCK) {
 
             Ast_Node_Code_Block* _code_block = get_code_block_node(__ast, _name_space);
+    Ast_Node* get_value(Ast*);
 
             while(_code_block) {
 
@@ -909,7 +954,6 @@ parser::Ast_Node_Struct_Declaration* parser::get_struct_declaration(Ast* __ast, 
     return 0;
 
 }
-
 
 parser::Ast_Node_Code_Block* parser::get_code_block_node(Ast* __ast, Name_Space* __name_space) {
 
@@ -973,4 +1017,18 @@ int parser::get_implicit_value_type_size(Token* __token) {
 
 }
 
+parser::Ast_Node* parser::get_value(Ast* __ast) {
+
+    switch (get_node_type(__ast))
+    {
+    case AST_NODE_VARIABLE: return Ast_Node_Variable::generate(__ast); break;
+    case AST_NODE_PARENTHESIS: return Ast_Node_Parenthesis::generate(__ast); break;
+    case AST_NODE_FUNCTION_CALL: return Ast_Node_Function_Call::generate(__ast); break;
+    case AST_NODE_IMPLICIT_VALUE: return Ast_Node_Implicit_Value::generate(__ast); break;
+    default: throw Unexpected_Token_Ast(__ast->code_information, __ast->get_token(0)); break;
+    }
+
+    return 0;
+
+}
 

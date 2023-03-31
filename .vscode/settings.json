@@ -76,6 +76,8 @@
         "cfenv": "cpp",
         "backup_code_heyu": "cpp",
         "codeee": "cpp",
-        "code_again": "cpp"
+        "code_again": "cpp",
+        "ast_nodes.h": "c",
+        "last_back_up": "c"
     }
 }

@@ -53,7 +53,7 @@ namespace parser {
 
         Ast_Node_Name_Space* body;
         
-        ~Ast_Node_Contract_Declaration(); Ast_Node_Contract_Declaration();
+        ~Ast_Node_Contract_Declaration(); Ast_Node_Contract_Declaration(Ast_Node_Name_Space*);
 
         static Ast_Node_Contract_Declaration* generate(Ast*);
 
@@ -87,9 +87,13 @@ namespace parser {
         Token* variable_token_name;
         bool is_static;
 
+        Ast_Node_Constructor_Call* array_size;
+
         int stack_position;
 
         ~Ast_Node_Variable_Declaration(); Ast_Node_Variable_Declaration(Type_Information*, Token*, bool);
+
+        void set_array_size_expression(Ast*);
 
         static Ast_Node_Variable_Declaration* generate(Ast*, Ast_Node_Struct_Declaration*, bool, int);
         
@@ -111,6 +115,8 @@ namespace parser {
         bool is_static, body_defined, destructor;
         Ast_Node_Code_Block* body;
         Name_Space* name_space;
+
+        Ast_Node_Function_Declaration* forward_declaration;
 
         int body_position;
 
@@ -297,6 +303,8 @@ namespace parser {
 
         Ast_Node_Expression* expression;
 
+        Type_Information* function_return_type;
+
         ~Ast_Node_Return_Key_Word(); Ast_Node_Return_Key_Word();
 
         void confirm_return_type(Ast*, int);
@@ -312,7 +320,7 @@ namespace parser {
         Ast_Node_Variable_Declaration* condition;
         Ast_Node_Code_Block* body;
 
-        int previous_stack_position, body_position;
+        byte_code::Byte_Code_Block* loop_body;
 
         ~Ast_Node_While(); Ast_Node_While(Ast_Node_Code_Block*);
 
@@ -329,7 +337,7 @@ namespace parser {
         Ast_Node_Variable_Declaration* condition;
         Ast_Node_Code_Block* body;
 
-        int previous_stack_position, body_position;
+        byte_code::Byte_Code_Block* loop_body;
 
         ~Ast_Node_Do_While(); Ast_Node_Do_While(Ast_Node_Code_Block*);
 
@@ -394,6 +402,8 @@ namespace parser {
         Ast_Node_Variable_Declaration* condition;
         Ast_Node_Code_Block* body;
 
+        byte_code::Byte_Code_Block* loop_body;
+
         int previous_stack_position, body_position, variables_declarations_size, variable_declarations_instructions_count;
 
         byte_code::Byte_Code* go_back;
@@ -423,6 +433,15 @@ namespace parser {
 
     };
 
+    struct Ast_Node_Type_Conversion : Ast_Node {
+
+        Ast_Node* value;
+
+        ~Ast_Node_Type_Conversion(); Ast_Node_Type_Conversion(Type_Information*, Ast_Node*);
+
+        static Ast_Node_Type_Conversion* generate(Ast*);
+
+    };
 
 }
 

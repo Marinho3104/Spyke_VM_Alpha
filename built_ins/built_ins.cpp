@@ -54,6 +54,10 @@ char* built_ins::get_struct_function_name_of_operation_id(int __operation_id) {
 
     case FUNCTION_OPERATOR_EQUAL_TO: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_EQUAL_TO_NAME ); break;
     case FUNCTION_OPERATOR_NOT_EQUAL_TO: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_NOT_EQUAL_TO_NAME ); break;
+    case FUNCTION_OPERATOR_GREATER_THAN: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_GREATER_THAN_NAME ); break;
+    case FUNCTION_OPERATOR_LESS_THAN: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_LESS_THAN_NAME ); break;
+    case FUNCTION_OPERATOR_GREATER_THAN_EQUAL_TO: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_GREATER_THAN_EQUAL_TO_NAME ); break;
+    case FUNCTION_OPERATOR_LESS_THAN_EQUAL_TO: _function_name = utils::get_string_copy( (char*) FUNCTION_OPERATOR_LESS_THAN_EQUAL_TO_NAME ); break;
     
     default: break;
     }

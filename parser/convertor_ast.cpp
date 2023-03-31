@@ -12,6 +12,8 @@
 #include "ast_nodes.h"
 #include "token.h"
 #include "opcodes.h"
+
+#include <string.h>
 #include <iostream>
 
 
@@ -152,13 +154,13 @@ void parser::set_byte_code_of_ast(Convertor* __convertor, Ast_Node* __ast_node) 
                 __convertor,
                 (Ast_Node_Else*) __ast_node
             ); break;  
+
         case AST_NODE_WHILE:
 
             set_byte_code_of_ast_node_while(
                 __convertor,
                 (Ast_Node_While*) __ast_node
             ); break;  
-
         case AST_NODE_DO_WHILE:
 
             set_byte_code_of_ast_node_do_while(
@@ -166,12 +168,16 @@ void parser::set_byte_code_of_ast(Convertor* __convertor, Ast_Node* __ast_node) 
                 (Ast_Node_Do_While*) __ast_node
             ); break; 
 
-        case AST_NODE_CONTROL_STRUCTS_KEY_WORD:
+        // case AST_NODE_CONTROL_STRUCTS_KEY_WORD:
 
-            set_byte_code_of_ast_node_control_structs_key_words(
-                __convertor,
-                (Ast_Node_Control_Structs_Key_Words*) __ast_node
-            ); break;
+        //     set_byte_code_of_ast_node_control_structs_key_words(
+        //         __convertor,
+        //         (Ast_Node_Control_Structs_Key_Words*) __ast_node
+        //     ); break;
+
+        // case AST_NODE_CONTRACT_DECLARATION: 
+
+        //     break;
 
         case AST_NODE_FOR:
 
@@ -180,7 +186,14 @@ void parser::set_byte_code_of_ast(Convertor* __convertor, Ast_Node* __ast_node) 
                 (Ast_Node_For*) __ast_node
             ); break;
 
-        default: throw Ordinary_Exception_Convertor("Unexpected Ast Node Type"); break;
+        case AST_NODE_TYPE_CONVERSION:
+
+            set_byte_code_of_ast_type_conversion(
+                __convertor,
+                (Ast_Node_Type_Conversion*) __ast_node
+            ); break;
+            
+        default: std::cout << "Node type -> " << __ast_node->node_type << std::endl; throw Ordinary_Exception_Convertor("Unexpected Ast Node Type"); break;
     }
 
 }
@@ -226,11 +239,13 @@ void parser::set_byte_code_of_ast_node_struct_declaration(Convertor* __convertor
     for (int _ =  0; _ < __ast_node_struct_declaration->body->declarations->count; _++)
 
         if (
-            __ast_node_struct_declaration->body->declarations->operator[](_)->node_type == AST_NODE_FUNCTION_DECLARATION
+            __ast_node_struct_declaration->body->declarations->operator[](_)->node_type == AST_NODE_FUNCTION_DECLARATION || 
+            ( __ast_node_struct_declaration->body->declarations->operator[](_)->node_type == AST_NODE_VARIABLE_DECLARATION && 
+                ( (Ast_Node_Variable_Declaration*) __ast_node_struct_declaration->body->declarations->operator[](_) )->is_static )
         ) 
-            set_byte_code_of_ast_node_function_declaration(
+            set_byte_code_of_ast(
                 __convertor,
-                (Ast_Node_Function_Declaration*) __ast_node_struct_declaration->body->declarations->operator[](_)
+                __ast_node_struct_declaration->body->declarations->operator[](_)
             );
 
 }
@@ -244,12 +259,18 @@ void parser::set_byte_code_of_ast_node_function_declaration(Convertor* __convert
         __ast_node_function_declaration->body_position =
             __convertor->add_block();
 
+    if (
+        __ast_node_function_declaration->forward_declaration
+    ) 
+        __ast_node_function_declaration->forward_declaration->body_position = 
+            __ast_node_function_declaration->body_position;
+
+    if (!__ast_node_function_declaration->body_defined) return;
+
     byte_code::Byte_Code_Block* _byte_code_block =
         __convertor->blocks->operator[](__ast_node_function_declaration->body_position);
 
     _byte_code_block->entry_point = 1;
-
-    if (!__ast_node_function_declaration->body_defined) return;
 
     byte_code::Byte_Code_Block* _previous_code_block =
         __convertor->current_block;
@@ -257,85 +278,58 @@ void parser::set_byte_code_of_ast_node_function_declaration(Convertor* __convert
     __convertor->current_block = 
         _byte_code_block;
 
- /// ///
+    // // // // //
 
-    // Allocate memory for return value and return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_ALLOCATION,
-            __ast_node_function_declaration->representive_type->get_size() + 2
-        )
+    // Function return value allocation
+    __convertor->set_byte_code_stack_memory_allocation(
+        __ast_node_function_declaration->representive_type->get_size()
     );
 
-    __convertor->current_block->current_stack_size = 
-        __ast_node_function_declaration->representive_type->get_size() + 2;
+    // Instruction return address allocation
+    __convertor->set_byte_code_stack_memory_allocation(
+        2 // Address size
+    );
 
-    // Make copies for stack parameters variables 
+    // Makes copy of given arguments throught stack_frame ( a.k.a LOAD, etc ... )
     for (int _ = 0; _ < __ast_node_function_declaration->parameters->count; _++) {
 
-        // Set stack size
-        ((Ast_Node_Variable_Declaration*) __ast_node_function_declaration->parameters->operator[](_))->stack_position = 
-            __convertor->current_block->current_stack_size;
-
-        __convertor->current_block->current_stack_size += 
-            __ast_node_function_declaration->parameters->operator[](_)->representive_type->get_size();
-
-        // Load for parameters copy
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                LOAD,
-                0
-            )
+        // Set parameter stack position
+        __convertor->set_variable_declaration_stack_position(
+            (Ast_Node_Variable_Declaration*) __ast_node_function_declaration->parameters->operator[](_)
         );
 
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                MEMORY_COPY,
-                __ast_node_function_declaration->parameters->operator[](_)->representive_type->get_size()
-            )
+        // Load the position of parameter copy
+        __convertor->set_byte_code_load(0);
+
+        // Memory copy of given argument into parameter new position
+        __convertor->set_byte_code_memory_copy(
+            __ast_node_function_declaration->parameters->operator[](_)->representive_type->get_size()
         );
 
-        // Allocate memory of parameters size
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                STACK_MEMORY_ALLOCATION,
-                __ast_node_function_declaration->parameters->operator[](_)->representive_type->get_size()
-            )
+        // Allocates parameter memory
+        __convertor->set_byte_code_stack_memory_allocation(
+            __ast_node_function_declaration->parameters->operator[](_)->representive_type->get_size()
         );
 
     }
 
-    // Function Body
+    // Set function body byte code
     __convertor->set_block(
         __ast_node_function_declaration->body->code
     );
 
+    // After end of function body it needs to deallocate all stack memory used and go to instruction return address
 
-    // Deallocation
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_DEALLOCATION,
-            __convertor->current_block->current_stack_size
-        )
+    // Deallocates all used stack memory
+    __convertor->set_byte_code_stack_memory_deallocation(__convertor->current_block->current_stack_size);
+
+    // Loads return instruction address
+    __convertor->set_byte_code_load_inverted(
+        __ast_node_function_declaration->representive_type->get_size()
     );
 
-
-    // Load address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD_INVERTED,
-            __ast_node_function_declaration->representive_type->get_size()
-        )
-    );
-
-
-    // Goto to return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO_STACK_FRAME,
-            0
-        )
-    );
+    // Go to return address
+    __convertor->set_byte_code_go_stack_frame();
 
     __convertor->current_block = 
         _previous_code_block;
@@ -346,25 +340,47 @@ void parser::set_byte_code_of_ast_node_variable_declaration(Convertor* __convert
 
     __convertor->print("--> Get Byte Code Of Ast Node Variable Declaration <--");
 
-    __ast_node_variable_declaration->stack_position = 
-        __convertor->current_block->current_stack_size;
+    // Current block copy
+    byte_code::Byte_Code_Block* _previous_code_block = 
+        0;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_ALLOCATION,
-            __ast_node_variable_declaration->representive_type->get_size()
-        )
+    // If variable is static needs to be "execute" in initial block ( a.k.a block 0 )
+    if ( __ast_node_variable_declaration->is_static ) 
+        { _previous_code_block = __convertor->current_block; __convertor->current_block = __convertor->blocks->operator[](0); }
+
+    // Set variable stack_position
+    __convertor->set_variable_declaration_stack_position(__ast_node_variable_declaration);
+
+    // Allocates the variable size into stack memory
+    __convertor->set_byte_code_stack_memory_allocation(
+        __ast_node_variable_declaration->representive_type->get_size()
     );
 
-    __convertor->current_block->current_stack_size += 
-        __ast_node_variable_declaration->representive_type->get_size();
+    // Check if it is a "normal" variable or a array
+    if (
+        __ast_node_variable_declaration->constructor_call && !__ast_node_variable_declaration->array_size
+    )
 
-    if (__ast_node_variable_declaration->constructor_call)
-
+        // Calls variable declaration constructor
         set_byte_code_of_ast(
             __convertor,
             __ast_node_variable_declaration->constructor_call->constructor
         );
+
+    // Execute extra byte code for array size
+    else {
+
+        __ast_node_variable_declaration->representive_type->pointer_level--;
+
+        int _variable_size = __ast_node_variable_declaration->representive_type->get_size();
+
+        __ast_node_variable_declaration->representive_type->pointer_level++;
+
+        __convertor->set_variable_declaration_array_size(__ast_node_variable_declaration->array_size, _variable_size);
+    
+    }
+
+    if (_previous_code_block) __convertor->current_block = _previous_code_block;
 
 }
 
@@ -372,82 +388,38 @@ void parser::set_byte_code_of_ast_node_expression(Convertor* __convertor, Ast_No
 
     __convertor->print("--> Get Byte Code Of Ast Node Expression <--");
 
-    int _backup_stack_size = 
-        __convertor->current_block->current_stack_size;
-
+    // Just executes the set of instructions
     set_byte_code_of_ast(
         __convertor,
         __ast_node_expression->expression_instructions
     );
 
-    if (
-        __convertor->current_block->current_stack_size != _backup_stack_size && __ast_node_expression->expression_instructions->node_type != AST_NODE_FUNCTION_CALL
-    ) {
-
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                LOAD,
-                __convertor->force_memory_allocation ? __ast_node_expression->expression_instructions->representive_type->get_size() : 0
-            )
-        );
-
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                LOAD,
-                __convertor->current_block->current_stack_size - _backup_stack_size
-            )
-        );
-
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                MEMORY_COPY,
-                __ast_node_expression->expression_instructions->representive_type->get_size()
-            )
-        );
-
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                STACK_MEMORY_DEALLOCATION,
-                __convertor->current_block->current_stack_size - _backup_stack_size - 
-                    ( __convertor->force_memory_allocation ? __ast_node_expression->expression_instructions->representive_type->get_size() : 0 )
-            )
-        );
-
-        __convertor->current_block->current_stack_size = 
-            _backup_stack_size +
-                    ( __convertor->force_memory_allocation ? __ast_node_expression->expression_instructions->representive_type->get_size() : 0 );
-
-    }
-
 }
 
-void parser::set_byte_code_of_ast_node_variable(Convertor* __convertor, Ast_Node_Variable* __ast_node_variable) { // Here  <------
+void parser::set_byte_code_of_ast_node_variable(Convertor* __convertor, Ast_Node_Variable* __ast_node_variable) { 
 
     __convertor->print("--> Get Byte Code Of Ast Node Variable <--");
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
+    // Load the variablde itself 
+    // Depending if is global or not ( LOAD, LOAD_GLOBAL )
+    __ast_node_variable->variable_declaration->is_static ?
+        __convertor->set_byte_code_load_global(
+            __ast_node_variable->variable_declaration->stack_position, __convertor->blocks->operator[](0)
+        ) :
+        __convertor->set_byte_code_load(
             __convertor->current_block->current_stack_size - __ast_node_variable->variable_declaration->stack_position
-        )
-    );
+        );
 
-    if (__convertor->only_call) return;
+    // If it is only need to load exit here
+    if ( __convertor->only_call ) return;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
-    );
+    // If it reach here it will make a copy of the value into first not allocated stack position
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            MEMORY_COPY,
-            __ast_node_variable->representive_type->get_size()
-        )
-    );
-
+    // Load first not stack allocated  
+    __convertor->set_byte_code_load(0); 
+    
+    // executes the memory copy
+    __convertor->set_byte_code_memory_copy( __ast_node_variable->representive_type->get_size() );
 
 
 }
@@ -456,30 +428,25 @@ void parser::set_byte_code_of_ast_node_implicit_value(Convertor* __convertor, As
 
     __convertor->print("--> Get Byte Code Of Ast Node Variable <--");
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD_GLOBAL,
-            __convertor->implicit_value->positions->operator[](
+    // Load the implicit value itself
+
+    __convertor->set_byte_code_load_global(
+        __convertor->implicit_value->positions->operator[](
                 __ast_node_implicit_value->implicit_value_position
-            ) + HEAP_MEMORY_SIZE + STACK_MEMORY_SIZE
-        )
+            ) + HEAP_MEMORY_SIZE + STACK_MEMORY_SIZE,
+        __convertor->blocks->operator[](0)
     );
 
-    if (__convertor->only_call) return;
+    // If it is only need to load exit here
+    if ( __convertor->only_call ) return;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
-    );
+    // If it reach here it will make a copy of the value into first not allocated stack position
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            MEMORY_COPY,
-            __ast_node_implicit_value->representive_type->get_size()
-        )
-    );
+    // Load first not stack allocated  
+    __convertor->set_byte_code_load(0); 
+    
+    // executes the memory copy
+    __convertor->set_byte_code_memory_copy( __ast_node_implicit_value->representive_type->get_size() );
 
 }
 
@@ -487,106 +454,84 @@ void parser::set_byte_code_of_ast_node_function_call(Convertor* __convertor, Ast
 
     __convertor->print("--> Get Byte Code Of Ast Node Function Call <--");
 
-    std::cout << "Function name -> " << __ast_node_function_call->function_declaration->body_position << std::endl;
-
-
-    // Get inicial stack size
-    int _backup_stack_size =
+    // Save the current stack position ( without function call garbage )
+    int _stack_position_backup =    
         __convertor->current_block->current_stack_size;
 
+    // Set the Params in reverse order
 
-    // Previous value of call var
     bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 1;
     bool _prev_call_value = __convertor->only_call; __convertor->only_call = 1;
 
-
-    // Load all parameters given
     for (int _ = __ast_node_function_call->parameters->count - 1; _ >= 0; _--)
 
         set_byte_code_of_ast(
             __convertor,
-            __ast_node_function_call->parameters->operator[](_)->expression_instructions
+            __ast_node_function_call->parameters->operator[](_)
         );
 
-
-    // Set previous values
     __convertor->force_memory_allocation = _prev_force_allocation_value;
     __convertor->only_call = _prev_call_value;
 
+    // Set the return instruction address
+    // Needs to load inverted with return size
 
-    // Load address 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD_INVERTED,
-            __ast_node_function_call->function_declaration->representive_type->get_size()
-        )
+    // Load inverted the return instruction address
+    __convertor->set_byte_code_load_inverted(
+        __ast_node_function_call->function_declaration->representive_type->get_size()
     );
-
 
     // Memory copy of address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            MEMORY_COPY_ADDRESS,
-            0
-        )
+    // Which makes a copy of the given argument in byte code into the loaded value
+    __convertor->set_byte_code_memory_copy_address();
+
+    // Go to function declaration address
+    __convertor->set_byte_code_go(
+        __ast_node_function_call->function_declaration->body_position
     );
 
-    __convertor->memory_copy_stack_frame_before_go->add(
-        __convertor->current_block->block->last->object
-    );
+    // Check s if there was some extra allocation
+    if ( __convertor->current_block->current_stack_size != _stack_position_backup ) {
 
+        // Here need to remove the extra space allocated throught out the parameters
+        // and copy the return of the final address into the first one
 
-    // Call function
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO,
-            __ast_node_function_call->function_declaration->body_position
-        )
-    );
+        // Only if the return value is not spyke type it is worth to memory copy
+        if ( ! __ast_node_function_call->representive_type->is_spyke_type() ) {
 
-    __convertor->call_byte_codes->add(
-        __convertor->current_block->block->last->object
-    );
+            // Load the return value of function
+            __convertor->set_byte_code_load(0);
 
+            // Load the initial position
+            __convertor->set_byte_code_load(
+                __convertor->current_block->current_stack_size - _stack_position_backup
+            );
 
-    // If there was some "extra" stack allocation (eg. for functions returns), copies function return value into "first slot"
-    if (
-        __convertor->current_block->current_stack_size != _backup_stack_size
-    ) {
-
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                LOAD,
-                0
-            )
-        );
-
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                LOAD,
-                __convertor->current_block->current_stack_size - _backup_stack_size
-            )
-        );
-
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                MEMORY_COPY,
+            // Memory copy 
+            __convertor->set_byte_code_memory_copy(
                 __ast_node_function_call->function_declaration->representive_type->get_size()
-            )
-        );
+            );
 
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                STACK_MEMORY_DEALLOCATION,
-                __convertor->current_block->current_stack_size - _backup_stack_size
-            )
+        }
+
+        // Dealloc all garbage memory
+        __convertor->set_byte_code_stack_memory_deallocation(
+            __convertor->current_block->current_stack_size - _stack_position_backup
         );
 
     }
 
+    // Only Call
+    if (__convertor->only_call && ! __ast_node_function_call->representive_type->is_spyke_type()) {
+
+        __convertor->set_byte_code_load(
+            0
+        );
+
+    }
 
     // Forced memory allocation
-    if (__convertor->force_memory_allocation) {
+    if (__convertor->force_memory_allocation && ! __ast_node_function_call->representive_type->is_spyke_type()) {
 
         __convertor->current_block->block->add(
             byte_code::Byte_Code::generate(
@@ -595,27 +540,13 @@ void parser::set_byte_code_of_ast_node_function_call(Convertor* __convertor, Ast
             )
         );
 
-        _backup_stack_size += 
+        _stack_position_backup += 
             __ast_node_function_call->function_declaration->representive_type->get_size();
 
     }
 
-
-    // Only Call
-    if (__convertor->only_call) {
-
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                LOAD,
-                __convertor->force_memory_allocation ? __ast_node_function_call->function_declaration->representive_type->get_size()
-                    : 0
-            )
-        );
-
-    }
-
     __convertor->current_block->current_stack_size = 
-        _backup_stack_size;
+        _stack_position_backup;
 
 }
 
@@ -623,9 +554,11 @@ void parser::set_byte_code_of_ast_node_pointer_operations(Convertor* __convertor
 
     __convertor->print("--> Get Byte Code Of Ast Node Pointer Operations <--");
 
-    bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 1; // <-------- Here
-    bool _prev_call_value = __convertor->only_call; __convertor->only_call = 1;
+    // Execute the value
 
+    bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 1;
+    bool _prev_call_value = __convertor->only_call; __convertor->only_call = 1;
+    
     set_byte_code_of_ast(
         __convertor,
         __ast_node_pointer_operation->value
@@ -634,53 +567,39 @@ void parser::set_byte_code_of_ast_node_pointer_operations(Convertor* __convertor
     __convertor->force_memory_allocation = _prev_force_allocation_value;
     __convertor->only_call = _prev_call_value;
 
-    if (__ast_node_pointer_operation->pointer_level > 0) {
+    // Check if is get address from ( & )
+    if ( __ast_node_pointer_operation->pointer_level > 0 ) {
 
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                LOAD,
+        // Load the space of new address
+        __convertor->set_byte_code_load(
+            0
+        );
+
+        // Copies the address of value into new address space
+        __convertor->set_byte_code_memory_copy_stack_frame();
+
+        if ( __convertor->only_call )
+
+            __convertor->set_byte_code_load(
                 0
-            )
-        );
+            );
 
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                MEMORY_COPY_STACK_FRAME,
-                0
-            )
-        );
+        if ( __convertor->force_memory_allocation )
 
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                LOAD,
-                0
-            )
-        );
+            __convertor->set_byte_code_stack_memory_allocation(
+                2 // address size
+            );
 
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                STACK_MEMORY_ALLOCATION,
-                2
-            )
-        );
-
-        __convertor->current_block->current_stack_size += 2;
 
     }
 
     else {
 
-        for (int _ = 0; _ < __ast_node_pointer_operation->pointer_level * -1; _++)
-
-            __convertor->current_block->block->add(
-                byte_code::Byte_Code::generate(
-                    GET_ADDRESS_FROM_STACK,
-                    0
-                )
-            );
+        for (int _ = 0; _ < __ast_node_pointer_operation->pointer_level * -1; _++) 
+        
+            __convertor->set_byte_code_get_address_from_stack();
 
     }
-
 
 }
 
@@ -702,66 +621,39 @@ void parser::set_byte_code_of_ast_node_byte_code(Convertor* __convertor, Ast_Nod
     bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 0;
     bool _prev_call_value = __convertor->only_call; __convertor->only_call = 0;
 
+    // Byte code code
     set_byte_code_of_ast(
         __convertor,
         __ast_node_byte_code->code
     );
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_ALLOCATION,
-            1
-        )
-    );
+    // Allocates memory || code ( 1 byte )
+    __convertor->set_byte_code_stack_memory_allocation(1);
 
-    __convertor->current_block->current_stack_size ++;
 
+    // Byte code argument
     set_byte_code_of_ast(
         __convertor,
         __ast_node_byte_code->argument
     );
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_ALLOCATION,
-            2
-        )
-    );
-
-    __convertor->current_block->current_stack_size += 2;
+    // Allocates memory || argument ( 2 byte )
+    __convertor->set_byte_code_stack_memory_allocation(2);
 
     __convertor->force_memory_allocation = _prev_force_allocation_value;
     __convertor->only_call = _prev_call_value;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            3
-        )
-    );
+    // Load code
+    __convertor->set_byte_code_load(3);
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            2
-        )
-    );
+    // Load argument
+    __convertor->set_byte_code_load(2);
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_DEALLOCATION,
-            3
-        )
-    ); 
+    // Deallocates the 3 bytes of byte code
+    __convertor->set_byte_code_stack_memory_deallocation(3);
 
-    __convertor->current_block->current_stack_size -= 3;
-
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            CUSTOM_BYTE_CODE,
-            0
-        )
-    );
+    // Set custom byte code
+    __convertor->set_byte_code_custom_byte_code(0);
 
 }
 
@@ -769,7 +661,7 @@ void parser::set_byte_code_of_ast_node_return_key_word(Convertor* __convertor, A
 
     __convertor->print("--> Get Byte Code Of Ast Node Return Key Word <--");
 
-    bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 1;
+    bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 0;
     bool _prev_call_value = __convertor->only_call; __convertor->only_call = 1;
 
     set_byte_code_of_ast(
@@ -780,19 +672,19 @@ void parser::set_byte_code_of_ast_node_return_key_word(Convertor* __convertor, A
     __convertor->force_memory_allocation = _prev_force_allocation_value;
     __convertor->only_call = _prev_call_value;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
+    if ( ! __ast_node_return_key_word->function_return_type->is_spyke_type()) {
+    
+        // Load the return value of function ( first address of function ) 
+        __convertor->set_byte_code_load(
             __convertor->current_block->current_stack_size
-        )
-    );
+        );
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            MEMORY_COPY,
+        // Copy the loaded value into return value 
+        __convertor->set_byte_code_memory_copy(
             __ast_node_return_key_word->expression->representive_type->get_size()
-        )
-    ); 
+        );
+    
+    }
 
 }
 
@@ -800,20 +692,19 @@ void parser::set_byte_code_of_ast_node_constructor_call(Convertor* __convertor, 
 
     __convertor->print("--> Get Byte Code Of Ast Node Constructor Call <--");
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_ALLOCATION,
-            __ast_node_constructor_call->representive_type->get_size()
-        )
-    );
+    // Here we need to allocate memory for the return value of the contructor
 
+    // Set variable stack position
     __ast_node_constructor_call->this_variable->stack_position = 
         __convertor->current_block->current_stack_size;
 
-    __convertor->current_block->current_stack_size +=
-        __ast_node_constructor_call->representive_type->get_size();
+    // Allocates variable size
+    __convertor->set_byte_code_stack_memory_allocation(
+        __ast_node_constructor_call->representive_type->get_size()
+    );
 
-    // Previous value of call var
+    // Execute the constructor itself
+
     bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 0;
     bool _prev_call_value = __convertor->only_call; __convertor->only_call = 0;
 
@@ -822,34 +713,24 @@ void parser::set_byte_code_of_ast_node_constructor_call(Convertor* __convertor, 
         __ast_node_constructor_call->constructor
     );
 
-    // Set previous values
     __convertor->force_memory_allocation = _prev_force_allocation_value;
     __convertor->only_call = _prev_call_value;
 
-    if (__convertor->only_call) {
 
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                LOAD,
-                __ast_node_constructor_call->representive_type->get_size()
-            )
+    if ( __convertor->only_call )
+
+        // Load Variable
+        __convertor->set_byte_code_load(
+            __ast_node_constructor_call->representive_type->get_size()
         );
 
-    }
+    // Cause already allocates the memory of the variable 
+    // check if there is no need for the forced allocate and if not deallocate
+    if ( ! __convertor->force_memory_allocation )
 
-    if (!__convertor->force_memory_allocation) {
-
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                STACK_MEMORY_DEALLOCATION,
-                __ast_node_constructor_call->representive_type->get_size()
-            )
-        );  
-
-        __convertor->current_block->current_stack_size -=
-            __ast_node_constructor_call->representive_type->get_size();
-
-    }
+        __convertor->set_byte_code_stack_memory_deallocation(
+            __ast_node_constructor_call->representive_type->get_size()
+        );
 
 }
 
@@ -857,9 +738,11 @@ void parser::set_byte_code_of_ast_node_accessing(Convertor* __convertor, Ast_Nod
 
     __convertor->print("--> Get Byte Code Of Ast Node Accessing <--");
 
-    int _backup_stack_size_with_first = 
+    // Back up stack size
+    int _stack_size_back_up = 
         __convertor->current_block->current_stack_size;
 
+    // Executes only first time, for the first value
     if (__first) {
 
         bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 1;
@@ -875,85 +758,200 @@ void parser::set_byte_code_of_ast_node_accessing(Convertor* __convertor, Ast_Nod
 
     }
 
-    int _backup_stack_size = 
-        __convertor->current_block->current_stack_size;
+    // Variables for switch code
+    Ast_Node_Struct_Declaration* _struct_declaration_node; // For switch -- AST_NODE_VARIABLE
+    Ast_Node_Variable* _variable_node; //  For switch -- AST_NODE_VARIABLE
+    byte_code::Byte_Code* _load_byte_code = 
+        __convertor->current_block->block->last->object; // Byte code of last load
+    Ast_Node_Accessing* _accessing_node; // For switch -- AST_NODE_ACCESSING
+    short _argument; // For switch
 
+    // Here we have 3 options:
+    //
+    //      Or variable: meaning is the last accessing and is a variable
+    //      Or function call: meaning is the last accessing and is a function call
+    //      Or accesssing: meaning there is another accessing -- here we just "prepare" the value for the next accessing value
+    //
     switch (__ast_node_accessing->accessing->node_type)
     {
-    
-    case AST_NODE_VARIABLE: 
-
-        __convertor->current_block->block->last->object->argument -= 
-            ((Ast_Node_Variable*)__ast_node_accessing->value)->variable_declaration->representive_type->declaration->get_variable_off(
-                ((Ast_Node_Variable*)__ast_node_accessing->accessing)->variable_declaration
-            ); break;
-
-    case AST_NODE_FUNCTION_CALL:
-
-        delete __convertor->current_block->block->remove(
-            __convertor->current_block->block->count
-        );
-
-        set_byte_code_of_ast(
-            __convertor,
-            __ast_node_accessing->accessing
-        ); 
-            
-        break;
-
-    case AST_NODE_ACCESSING:
-
-        switch ( ( (Ast_Node_Accessing*)__ast_node_accessing->accessing )->value->node_type )
-        {
 
         case AST_NODE_VARIABLE:
 
-            __convertor->current_block->block->last->object->argument -= 
-                ((Ast_Node_Variable*)__ast_node_accessing->value)->variable_declaration->representive_type->declaration->get_variable_off(
-                    ((Ast_Node_Variable*) ( (Ast_Node_Accessing*) __ast_node_accessing->accessing)->value )->variable_declaration
-                );
+            // Save argument
+            _argument = 
+                 __convertor->current_block->block->last->object->argument;
 
-            ((Ast_Node_Variable*)__ast_node_accessing->value)->variable_declaration->stack_position = 
-                __convertor->current_block->current_stack_size - __convertor->current_block->block->last->object->argument;
-        
-            break;
-        
-        case AST_NODE_FUNCTION_CALL:
-
-            {
-
-                delete __convertor->current_block->block->remove(
+            // Remove previous load
+            delete 
+                __convertor->current_block->block->remove(
                     __convertor->current_block->block->count
                 );
 
-                bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 1;
-                bool _prev_call_value = __convertor->only_call; __convertor->only_call = 1;
+            // Conversions
+            _struct_declaration_node = 
+                __ast_node_accessing->value->representive_type->declaration;
 
-                set_byte_code_of_ast(
-                    __convertor,
-                    __ast_node_accessing->accessing
-                ); 
+            _variable_node = 
+                (Ast_Node_Variable*) __ast_node_accessing->accessing;
 
-                __convertor->force_memory_allocation = _prev_force_allocation_value;
-                __convertor->only_call = _prev_call_value;
-                
-                break;
+        ast_node_variable_execution:
+
+            if ( ! _variable_node->variable_declaration->is_static ) {
+
+                // The Idea is, here we have already the variable loaded 
+                // so is just to subtract size of the others variables inside the struct until reacth the desired variable
+
+                _variable_node->variable_declaration->stack_position = 
+                    _argument - 
+                        _struct_declaration_node->get_variable_off(
+                            _variable_node->variable_declaration
+                        );
 
             }
 
-        default: exit(1); break;
+            set_byte_code_of_ast(
+                __convertor,
+                _variable_node
+            );
 
-        }
+            break;
+
+        case AST_NODE_FUNCTION_CALL: 
+        ast_node_function_call_execution:
+            // Here just ignore the previous call and just execute the function normally
+
+            // Remove byte code 
+            delete 
+                __convertor->current_block->block->remove(
+                    __convertor->current_block->block->count
+                );
+
+            // Function Call
+            set_byte_code_of_ast(
+                __convertor,
+                __ast_node_accessing->accessing
+            );
+
+            break;
+
+        case ACCESSING: 
+        
+            // Conversion
+            _accessing_node = 
+                (Ast_Node_Accessing*) __ast_node_accessing->accessing;
+
+            switch (_accessing_node->value->node_type)
+            {
+            case AST_NODE_VARIABLE:
+
+                { 
+
+                    // Conversions
+                    _struct_declaration_node = 
+                        __ast_node_accessing->value->representive_type->declaration;
+
+                    _variable_node = 
+                        (Ast_Node_Variable*) _accessing_node->value;
+
+                    // Cause this information we be necessary for next accessing we specify with force allocation and call
+                    bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 1;
+                    bool _prev_call_value = __convertor->only_call; __convertor->only_call = 1;
+
+                    // Makes normal execution
+                    goto 
+                        ast_node_variable_execution;
+
+                    __convertor->force_memory_allocation = _prev_force_allocation_value;
+                    __convertor->only_call = _prev_call_value;
+                
+                    break;
+
+                }
+
+            case AST_NODE_FUNCTION_CALL: 
+            
+                {
+
+                    // Cause this information we be necessary for next accessing we specify with force allocation and call
+                    bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 1;
+                    bool _prev_call_value = __convertor->only_call; __convertor->only_call = 1;
+
+                    // Makes normal execution
+                    goto 
+                        ast_node_function_call_execution;
+
+                    __convertor->force_memory_allocation = _prev_force_allocation_value;
+                    __convertor->only_call = _prev_call_value;
+
+                    break;
+
+                }
+
+            default: throw Ordinary_Exception_Convertor("Internal error"); break;
+            }
+            
+            break;
+
+        default: throw Ordinary_Exception_Convertor("Internal error"); break;
+
+    }
+
+    // If it was accessing we need to recursively  
+    if ( __ast_node_accessing->accessing->node_type == ACCESSING )
 
         set_byte_code_of_ast_node_accessing(
             __convertor,
-            (Ast_Node_Accessing*) __ast_node_accessing->accessing,
+            _accessing_node,
             0
         );
 
-        break;
+    // Check is is the first one meaning the accessing is done
+    // And checks if there is garbage data and if is remove it
+    // makes a copy of return value
+    if ( __first && __convertor->current_block->current_stack_size != _stack_size_back_up ) {
 
-    default: exit(1); break;
+        // If there was no call we need to make one here to execute the memory copy
+        if ( ! __convertor->only_call ) 
+
+            __convertor->set_byte_code_load(
+
+                ( __convertor->force_memory_allocation )
+                    ? __ast_node_accessing->representive_type->get_size() 
+                    : 0
+
+            );
+
+        // Dealloc garbage data
+        // If there was a force allocation dont deallocate that
+        __convertor->set_byte_code_stack_memory_deallocation(
+            __convertor->current_block->current_stack_size - _stack_size_back_up - 
+                ( ( __convertor->force_memory_allocation ) ? __ast_node_accessing->representive_type->get_size() : 0 ) 
+        );
+
+        // Destination return value
+        __convertor->set_byte_code_load(
+
+            ( __convertor->force_memory_allocation )
+                ? __ast_node_accessing->representive_type->get_size() 
+                : 0
+
+        );
+
+        // Memory copy
+        __convertor->set_byte_code_memory_copy(
+            __ast_node_accessing->representive_type->get_size()
+        );
+
+        // If was call, need to make the call again
+        if ( __convertor->only_call ) 
+
+            __convertor->set_byte_code_load(
+
+                ( __convertor->force_memory_allocation )
+                    ? __ast_node_accessing->representive_type->get_size() 
+                    : 0
+
+            );
 
     }
 
@@ -970,41 +968,42 @@ void parser::set_byte_code_of_ast_node_cast(Convertor* __convertor, Ast_Node_Cas
 
 void parser::set_byte_code_of_ast_node_while(Convertor* __convertor, Ast_Node_While* __ast_node_while) {
 
-    int _body_position = 
-        __convertor->add_block();
+    // The idea to optimize space, that all code inside the loop even tho it is run in another stack block, is to be run inside the current stack size
+    // Avoiding to make the call byte code
+    // So to get the effect that is is running in another stack block 
+    // It will be created a new byte_code_block just for the conversion of the loop body and then will be copied to the current stack block
 
-    __ast_node_while->body_position = _body_position;
+    // Backup current_block
+    byte_code::Byte_Code_Block* _previous_block
+        = __convertor->current_block;
 
-    int _prev_stack_position = 
-        __convertor->current_block->current_stack_size;
+    // Temporary byte_code_block to save the byte code of loop body
+    byte_code::Byte_Code_Block* _loop_body = 
+        (byte_code::Byte_Code_Block*) malloc(sizeof(byte_code::Byte_Code_Block));
 
-    __ast_node_while->previous_stack_position = _prev_stack_position;
+    new (_loop_body) byte_code::Byte_Code_Block(); 
 
-    byte_code::Byte_Code_Block* _byte_code_block =
-        __convertor->blocks->operator[](_body_position);
+    // Makes a copy into the ast node for the control_structs_key_words
+    __ast_node_while->loop_body = 
+        _loop_body;
 
-    byte_code::Byte_Code_Block* _previous_code_block =
-        __convertor->current_block;
+    // Sets the previous current_stack value
+    _loop_body->current_stack_size = 
+        _previous_block->current_stack_size;
 
     __convertor->current_block = 
-        _byte_code_block;
+        _loop_body;
 
-    __convertor->current_block->current_stack_size = 
-        _prev_stack_position;
+    // Struct of while loop:
+    //
+    //  Make the confirmation -- if is true jump specific amount of instructions, if dont jump any instructions
+    //      The instructions next to confirmation is the exit loop instructions 
+    //      Meaning if condition is true ( stays in the loop ) it jumps the exit instructions, if is not true dont jump the exit instructions and exit the loop
+    //  
+    //  Executes the body instructions
+    //  At the end it returns to the begginnig of the loop and executes all again
 
-    
-    // Return address 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_ALLOCATION,
-            2
-        )
-    );
-
-    __convertor->current_block->current_stack_size += 2;
-
-
-    // Condition
+    // Executes the condition
     bool _prev_call = __convertor->only_call; __convertor->only_call = 1;
 
     set_byte_code_of_ast(
@@ -1014,136 +1013,97 @@ void parser::set_byte_code_of_ast_node_while(Convertor* __convertor, Ast_Node_Wh
 
     __convertor->only_call = _prev_call;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            CHECK_NOT,
-            3 // Instructions count to jumps
-        )
-    );
+    // Executes the confirmation
+    __convertor->set_byte_code_check(1);
 
-    // Deallocation
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_DEALLOCATION,
-            __convertor->current_block->current_stack_size - _prev_stack_position
-        )
-    );
+    // Back up for setting go to end of loop body
+    int _size_byte_code_here = _loop_body->block->count;
 
-    // Load return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
-    );
+    // Go byte code to end of loop body
+    __convertor->set_byte_code_jump(0);
 
-    // Goto to return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO_STACK_FRAME,
-            0
-        )
-    );
+    // Beacause at this time we dont know what is the full amount of instructions
+    // Byte code to take a copy 
+    byte_code::Byte_Code* _copy_of_end_loop_body = 
+        _loop_body->block->last->object;
 
-    
+    // Loop body
     __convertor->set_block(
         __ast_node_while->body->code
     );
 
-    // Deallocation
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_DEALLOCATION,
-            __convertor->current_block->current_stack_size - _prev_stack_position
-        )
+    // End of body 
+    // Deallocates all memory used inside the body
+    // And go back to the beginnig
+
+    // Deallocates memory
+    __convertor->set_byte_code_stack_memory_deallocation(
+        _loop_body->current_stack_size - _previous_block->current_stack_size
     );
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO,
-            _body_position
-        )
-    );
- 
-    __convertor->call_byte_codes->add(
-        __convertor->current_block->block->last->object
+    // Go back to beginning
+    __convertor->set_byte_code_jump_inverted(
+        _loop_body->block->count
     );
 
+    // Now that all body is done we can set the byte code jump argument
+    _copy_of_end_loop_body->argument =
+        _loop_body->block->count - _size_byte_code_here;
+
+    // Makes a copy to the previous code block
+    _previous_block->block->join(
+        _loop_body->block
+    );
 
     __convertor->current_block = 
-        _previous_code_block;
-
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
-    );
-
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            MEMORY_COPY_ADDRESS,
-            0
-        )
-    );
-
-    __convertor->memory_copy_stack_frame_before_go->add(
-        __convertor->current_block->block->last->object
-    );
-
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO,
-            _body_position
-        )
-    );
-
-    __convertor->call_byte_codes->add(
-        __convertor->current_block->block->last->object
-    );
+        _previous_block;
 
 }
 
 void parser::set_byte_code_of_ast_node_do_while(Convertor* __convertor, Ast_Node_Do_While* __ast_node_do_while) {
 
-    int _body_position = 
-        __convertor->add_block();
+    // The idea to optimize space, that all code inside the loop even tho it is run in another stack block, is to be run inside the current stack size
+    // Avoiding to make the call byte code
+    // So to get the effect that is is running in another stack block 
+    // It will be created a new byte_code_block just for the conversion of the loop body and then will be copied to the current stack block
 
-    __ast_node_do_while->body_position = _body_position;
+    // Backup current_block
+    byte_code::Byte_Code_Block* _previous_block
+        = __convertor->current_block;
 
-    int _prev_stack_position = 
-        __convertor->current_block->current_stack_size;
+    // Temporary byte_code_block to save the byte code of loop body
+    byte_code::Byte_Code_Block* _loop_body = 
+        (byte_code::Byte_Code_Block*) malloc(sizeof(byte_code::Byte_Code_Block));
 
-    __ast_node_do_while->previous_stack_position = _prev_stack_position;
+    new (_loop_body) byte_code::Byte_Code_Block(); 
 
-    byte_code::Byte_Code_Block* _byte_code_block =
-        __convertor->blocks->operator[](_body_position);
+    // Makes a copy into the ast node for the control_structs_key_words
+    __ast_node_do_while->loop_body = 
+        _loop_body;
 
-    byte_code::Byte_Code_Block* _previous_code_block =
-        __convertor->current_block;
+    // Sets the previous current_stack value
+    _loop_body->current_stack_size = 
+        _previous_block->current_stack_size;
 
     __convertor->current_block = 
-        _byte_code_block;
+        _loop_body;
 
-    __convertor->current_block->current_stack_size = 
-        _prev_stack_position;
+    // Struct of while loop:
+    //
+    //  Executes the body instructions
+    //
+    //  Make the confirmation -- if is true jump specific amount of instructions, if dont jump any instructions
+    //      The instructions next to confirmation is the exit loop instructions 
+    //      Meaning if condition is true ( stays in the loop ) it jumps the exit instructions, if is not true dont jump the exit instructions and exit the loop
+    //  
+    //  At the end it returns to the begginnig of the loop and executes all again
 
-    
-    // Return address 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_ALLOCATION,
-            2
-        )
-    );
-
-    __convertor->current_block->current_stack_size += 2;
-
+    // Loop body
     __convertor->set_block(
         __ast_node_do_while->body->code
     );
 
-    // Condition
+    // Executes the condition
     bool _prev_call = __convertor->only_call; __convertor->only_call = 1;
 
     set_byte_code_of_ast(
@@ -1153,125 +1113,84 @@ void parser::set_byte_code_of_ast_node_do_while(Convertor* __convertor, Ast_Node
 
     __convertor->only_call = _prev_call;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            CHECK_NOT,
-            3 // Instructions count to jumps
-        )
+    // Executes the confirmation
+    __convertor->set_byte_code_check(1);
+
+    // Back up for setting go to end of loop body
+    int _size_byte_code_here = _loop_body->block->count;
+
+    // Go byte code to end of loop body
+    __convertor->set_byte_code_jump(0);
+
+    // Beacause at this time we dont know what is the full amount of instructions
+    // Byte code to take a copy 
+    byte_code::Byte_Code* _copy_of_end_loop_body = 
+        _loop_body->block->last->object;
+
+    // End of body 
+    // Deallocates all memory used inside the body
+    // And go back to the beginnig
+
+    // Deallocates memory
+    __convertor->set_byte_code_stack_memory_deallocation(
+        _loop_body->current_stack_size - _previous_block->current_stack_size
     );
 
-    // Deallocation
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_DEALLOCATION,
-            __convertor->current_block->current_stack_size - _prev_stack_position
-        )
+    // Go back to beginning
+    __convertor->set_byte_code_jump_inverted(
+        _loop_body->block->count
     );
 
-    // Load return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
-    );
+    // Now that all body is done we can set the byte code jump argument
+    _copy_of_end_loop_body->argument =
+        _loop_body->block->count - _size_byte_code_here;
 
-    // Goto to return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO_STACK_FRAME,
-            0
-        )
+    // Makes a copy to the previous code block
+    _previous_block->block->join(
+        _loop_body->block
     );
-
-    // Deallocation
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_DEALLOCATION,
-            __convertor->current_block->current_stack_size - _prev_stack_position
-        )
-    );
-
-    // Goto to return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO,
-            _body_position
-        )
-    );
- 
-    __convertor->call_byte_codes->add(
-        __convertor->current_block->block->last->object
-    );
-
 
     __convertor->current_block = 
-        _previous_code_block;
-
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
-    );
-
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            MEMORY_COPY_ADDRESS,
-            0
-        )
-    );
-
-    __convertor->memory_copy_stack_frame_before_go->add(
-        __convertor->current_block->block->last->object
-    );
-
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO,
-            _body_position
-        )
-    );
-
-    __convertor->call_byte_codes->add(
-        __convertor->current_block->block->last->object
-    );
+        _previous_block;
 
 }
 
 void parser::set_byte_code_of_ast_node_if(Convertor* __convertor, Ast_Node_If* __ast_node_if) {
 
-    int _body_position = 
-        __convertor->add_block();
+    // The idea to optimize space, that all code inside the body even tho it is run in another stack block, is to be run inside the current stack size
+    // Avoiding to make the call byte code
+    // So to get the effect that is is running in another stack block 
+    // It will be created a new byte_code_block just for the conversion of the loop body and then will be copied to the current stack block
 
-    int _prev_stack_position = 
-        __convertor->current_block->current_stack_size;
+    // Backup current_block
+    byte_code::Byte_Code_Block* _previous_block
+        = __convertor->current_block;
 
-    byte_code::Byte_Code_Block* _byte_code_block =
-        __convertor->blocks->operator[](_body_position);
+    // Temporary byte_code_block to save the byte code of loop body
+    byte_code::Byte_Code_Block* _body = 
+        (byte_code::Byte_Code_Block*) malloc(sizeof(byte_code::Byte_Code_Block));
 
-    byte_code::Byte_Code_Block* _previous_code_block =
-        __convertor->current_block;
+    new (_body) byte_code::Byte_Code_Block(); 
+
+    // Sets the previous current_stack value
+    _body->current_stack_size = 
+        _previous_block->current_stack_size;
 
     __convertor->current_block = 
-        _byte_code_block;
+        _body;
 
-    __convertor->current_block->current_stack_size = 
-        _prev_stack_position;
+    // Struct of if:
+    //
+    //  Make the confirmation -- if is true jump specific amount of instructions, if dont jump any instructions
+    //      The instructions next to confirmation is the exit loop instructions 
+    //      Meaning if condition is true ( stays in the body ) it jumps the exit instructions, if is not true dont jump the exit instructions and exit the if body
+    //  
+    //  Executes the body instructions
+    //
+    //  Go to end of all if / else if / else attached
+    //
 
-    
-    // Return address 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_ALLOCATION,
-            2
-        )
-    );
-
-    __convertor->current_block->current_stack_size += 2;
-
-
-    // Condition
+    // Executes the condition
     bool _prev_call = __convertor->only_call; __convertor->only_call = 1;
 
     set_byte_code_of_ast(
@@ -1281,142 +1200,114 @@ void parser::set_byte_code_of_ast_node_if(Convertor* __convertor, Ast_Node_If* _
 
     __convertor->only_call = _prev_call;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            CHECK_NOT,
-            3 // Instructions count to jumps
-        )
-    );
+    // Executes the confirmation
+    __convertor->set_byte_code_check(1);
 
-    // Deallocation
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_DEALLOCATION,
-            __convertor->current_block->current_stack_size - _prev_stack_position
-        )
-    );
+    // Back up for setting go to end of body
+    int _size_byte_code_here = _body->block->count;
 
-    // Load return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
-    );
+    // Go byte code to end of body
+    __convertor->set_byte_code_jump(0);
 
-    // Goto to return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO_STACK_FRAME,
-            __ast_node_if->next_if_statement ? 1 : 0
-        )
-    );
+    // Beacause at this time we dont know what is the full amount of instructions
+    // Byte code to take a copy 
+    byte_code::Byte_Code* _copy_of_end_body = 
+        _body->block->last->object;
 
-    
+    // Loop body
     __convertor->set_block(
         __ast_node_if->body->code
     );
 
-    // Deallocation
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_DEALLOCATION,
-            __convertor->current_block->current_stack_size - _prev_stack_position
-        )
+    // End of body 
+    // Deallocates all memory used inside the body
+
+    // Deallocates memory
+    __convertor->set_byte_code_stack_memory_deallocation(
+        _body->current_stack_size - _previous_block->current_stack_size
     );
 
-    // Load return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
+    // Go to end of all if statement attached
+    __convertor->set_byte_code_jump(
+        0
     );
 
-    // Goto to return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO_STACK_FRAME,
-            0
-        )
-    );
- 
+    // Beacause at this time we dont know what is the full amount of instructions
+    // Byte code to take a copy 
+    byte_code::Byte_Code* _copy_of_end_if_statement = 
+        _body->block->last->object;
 
+    // Adds to array for at the end of all if statement it executes rigth all jumps amount
+    __convertor->if_statement_go_end->add(
+        _copy_of_end_if_statement
+    );
+
+    // Now that all body is done we can set the byte code jump argument
+    _copy_of_end_body->argument =
+        _body->block->count - _size_byte_code_here;
+
+    // Makes a copy to the previous code block
+    _previous_block->block->join(
+        _body->block
+    );
+
+    // Set the current instructions length, just for help
+    _copy_of_end_if_statement->argument = 
+        _previous_block->block->count;
 
     __convertor->current_block = 
-        _previous_code_block;
+        _previous_block;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
-    );
+    // To explain TODO
+    if ( ! __ast_node_if->next_if_statement ) {
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            MEMORY_COPY_ADDRESS,
-            0
-        )
-    );
+        for (int _ = 0; _ < __convertor->if_statement_go_end->count; _++ )
 
-    __convertor->memory_copy_stack_frame_before_go->add(
-        __convertor->current_block->block->last->object
-    );
+            __convertor->if_statement_go_end->operator[](_)->argument = 
+                __convertor->current_block->block->count - __convertor->if_statement_go_end->operator[](_)->argument + 1;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO,
-            _body_position
-        )
-    );
+        __convertor->if_statement_go_end->clean();
 
-    __convertor->call_byte_codes->add(
-        __convertor->current_block->block->last->object
-    );
+    }
 
 }
 
 void parser::set_byte_code_of_ast_node_else_if(Convertor* __convertor, Ast_Node_Else_If* __ast_node_else_if) {
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            JUMP,
-            3
-        )
-    );
+    // The idea to optimize space, that all code inside the body even tho it is run in another stack block, is to be run inside the current stack size
+    // Avoiding to make the call byte code
+    // So to get the effect that is is running in another stack block 
+    // It will be created a new byte_code_block just for the conversion of the loop body and then will be copied to the current stack block
 
-    int _body_position = 
-        __convertor->add_block();
+    // Backup current_block
+    byte_code::Byte_Code_Block* _previous_block
+        = __convertor->current_block;
 
-    int _prev_stack_position = 
-        __convertor->current_block->current_stack_size;
+    // Temporary byte_code_block to save the byte code of loop body
+    byte_code::Byte_Code_Block* _body = 
+        (byte_code::Byte_Code_Block*) malloc(sizeof(byte_code::Byte_Code_Block));
 
-    byte_code::Byte_Code_Block* _byte_code_block =
-        __convertor->blocks->operator[](_body_position);
+    new (_body) byte_code::Byte_Code_Block(); 
 
-    byte_code::Byte_Code_Block* _previous_code_block =
-        __convertor->current_block;
+    // Sets the previous current_stack value
+    _body->current_stack_size = 
+        _previous_block->current_stack_size;
 
     __convertor->current_block = 
-        _byte_code_block;
+        _body;
 
-    __convertor->current_block->current_stack_size = 
-        _prev_stack_position;
+    // Struct of else if:
+    //
+    //  Make the confirmation -- if is true jump specific amount of instructions, if dont jump any instructions
+    //      The instructions next to confirmation is the exit loop instructions 
+    //      Meaning if condition is true ( stays in the body ) it jumps the exit instructions, if is not true dont jump the exit instructions and exit the if body
+    //  
+    //  Executes the body instructions
+    //
+    //  Go to end of all if / else if / else attached
+    //
 
-    
-    // Return address 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_ALLOCATION,
-            2
-        )
-    );
-
-    __convertor->current_block->current_stack_size += 2;
-
-
-    // Condition
+    // Executes the condition
     bool _prev_call = __convertor->only_call; __convertor->only_call = 1;
 
     set_byte_code_of_ast(
@@ -1426,328 +1317,222 @@ void parser::set_byte_code_of_ast_node_else_if(Convertor* __convertor, Ast_Node_
 
     __convertor->only_call = _prev_call;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            CHECK_NOT,
-            3 // Instructions count to jumps
-        )
-    );
+    // Executes the confirmation
+    __convertor->set_byte_code_check(1);
 
-    // Deallocation
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_DEALLOCATION,
-            __convertor->current_block->current_stack_size - _prev_stack_position
-        )
-    );
+    // Back up for setting go to end of body
+    int _size_byte_code_here = _body->block->count;
 
-    // Load return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
-    );
+    // Go byte code to end of body
+    __convertor->set_byte_code_jump(0);
 
-    // Goto to return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO_STACK_FRAME,
-            __ast_node_else_if->next_if_statement ? 1 : 0
-        )
-    );
+    // Beacause at this time we dont know what is the full amount of instructions
+    // Byte code to take a copy 
+    byte_code::Byte_Code* _copy_of_end_body = 
+        _body->block->last->object;
 
-    
+    // Loop body
     __convertor->set_block(
         __ast_node_else_if->body->code
     );
 
-    // Deallocation
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_DEALLOCATION,
-            __convertor->current_block->current_stack_size - _prev_stack_position
-        )
+    // End of body 
+    // Deallocates all memory used inside the body
+
+    // Deallocates memory
+    __convertor->set_byte_code_stack_memory_deallocation(
+        _body->current_stack_size - _previous_block->current_stack_size
     );
 
-    // Load return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
+    // Go to end of all if statement attached
+    __convertor->set_byte_code_jump(
+        0
     );
 
-    // Goto to return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO_STACK_FRAME,
-            0
-        )
-    );
- 
+    // Beacause at this time we dont know what is the full amount of instructions
+    // Byte code to take a copy 
+    byte_code::Byte_Code* _copy_of_end_if_statement = 
+        _body->block->last->object;
 
+    // Adds to array for at the end of all if statement it executes rigth all jumps amount
+    __convertor->if_statement_go_end->add(
+        _copy_of_end_if_statement
+    );
+
+    // Now that all body is done we can set the byte code jump argument
+    _copy_of_end_body->argument =
+        _body->block->count - _size_byte_code_here;
+
+    // Makes a copy to the previous code block
+    _previous_block->block->join(
+        _body->block
+    );
+
+    // Set the current instructions length, just for help
+    _copy_of_end_if_statement->argument = 
+        _previous_block->block->count;
 
     __convertor->current_block = 
-        _previous_code_block;
+        _previous_block;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
-    );
+    // To explain TODO
+    if ( ! __ast_node_else_if->next_if_statement ) {
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            MEMORY_COPY_ADDRESS,
-            0
-        )
-    );
+        for (int _ = 0; _ < __convertor->if_statement_go_end->count; _++ )
 
-    __convertor->memory_copy_stack_frame_before_go->add(
-        __convertor->current_block->block->last->object
-    );
+            __convertor->if_statement_go_end->operator[](_)->argument = 
+                __convertor->current_block->block->count - __convertor->if_statement_go_end->operator[](_)->argument + 1;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO,
-            _body_position
-        )
-    );
+        __convertor->if_statement_go_end->clean();
 
-    __convertor->call_byte_codes->add(
-        __convertor->current_block->block->last->object
-    );
+    }
 
 }
 
 void parser::set_byte_code_of_ast_node_else(Convertor* __convertor, Ast_Node_Else* __ast_node_else) {
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            JUMP,
-            3
-        )
-    );
+    // The idea to optimize space, that all code inside the body even tho it is run in another stack block, is to be run inside the current stack size
+    // Avoiding to make the call byte code
+    // So to get the effect that is is running in another stack block 
+    // It will be created a new byte_code_block just for the conversion of the loop body and then will be copied to the current stack block
 
-    int _body_position = 
-        __convertor->add_block();
+    // Backup current_block
+    byte_code::Byte_Code_Block* _previous_block
+        = __convertor->current_block;
 
-    int _prev_stack_position = 
-        __convertor->current_block->current_stack_size;
+    // Temporary byte_code_block to save the byte code of loop body
+    byte_code::Byte_Code_Block* _body = 
+        (byte_code::Byte_Code_Block*) malloc(sizeof(byte_code::Byte_Code_Block));
 
-    byte_code::Byte_Code_Block* _byte_code_block =
-        __convertor->blocks->operator[](_body_position);
+    new (_body) byte_code::Byte_Code_Block(); 
 
-    byte_code::Byte_Code_Block* _previous_code_block =
-        __convertor->current_block;
+    // Sets the previous current_stack value
+    _body->current_stack_size = 
+        _previous_block->current_stack_size;
 
     __convertor->current_block = 
-        _byte_code_block;
+        _body;
 
-    __convertor->current_block->current_stack_size = 
-        _prev_stack_position;
+    // Struct of else:
+    //
+    //  Executes the body instructions
+    //
+    //  Go to end of all if / else if / else attached
+    //
 
-    
-    // Return address 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_ALLOCATION,
-            2
-        )
-    );
-
-    __convertor->current_block->current_stack_size += 2;
-
+    // Loop body
     __convertor->set_block(
         __ast_node_else->body->code
     );
 
-    // Deallocation
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_DEALLOCATION,
-            __convertor->current_block->current_stack_size - _prev_stack_position
-        )
+    // End of body 
+    // Deallocates all memory used inside the body
+
+    // Deallocates memory
+    __convertor->set_byte_code_stack_memory_deallocation(
+        _body->current_stack_size - _previous_block->current_stack_size
     );
 
-    // Load return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
+    // Go to end of all if statement attached
+    __convertor->set_byte_code_jump(
+        0
     );
 
-    // Goto to return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO_STACK_FRAME,
-            0
-        )
-    );
- 
+    // Beacause at this time we dont know what is the full amount of instructions
+    // Byte code to take a copy 
+    byte_code::Byte_Code* _copy_of_end_if_statement = 
+        _body->block->last->object;
 
+    // Adds to array for at the end of all if statement it executes rigth all jumps amount
+    __convertor->if_statement_go_end->add(
+        _copy_of_end_if_statement
+    );
+
+    // Makes a copy to the previous code block
+    _previous_block->block->join(
+        _body->block
+    );
+
+    // Set the current instructions length, just for help
+    _copy_of_end_if_statement->argument = 
+        _previous_block->block->count;
 
     __convertor->current_block = 
-        _previous_code_block;
+        _previous_block;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
-    );
+    // To explain TODO
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            MEMORY_COPY_ADDRESS,
-            0
-        )
-    );
+    for (int _ = 0; _ < __convertor->if_statement_go_end->count; _++ )
 
-    __convertor->memory_copy_stack_frame_before_go->add(
-        __convertor->current_block->block->last->object
-    );
+        __convertor->if_statement_go_end->operator[](_)->argument = 
+            __convertor->current_block->block->count - __convertor->if_statement_go_end->operator[](_)->argument + 1;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO,
-            _body_position
-        )
-    );
+    __convertor->if_statement_go_end->clean();
 
-    __convertor->call_byte_codes->add(
-        __convertor->current_block->block->last->object
-    );
-
-}
-
-void parser::set_byte_code_of_ast_node_control_structs_key_words(
-    Convertor* __convertor, Ast_Node_Control_Structs_Key_Words* __ast_node_control_structs_key_words) {
-
-        int _previous_stack_position = 0, _body_position = 0;
-
-        switch (__ast_node_control_structs_key_words->control_struct->node_type)
-        {
-        case AST_NODE_WHILE: 
-
-            _previous_stack_position = ((Ast_Node_While*) __ast_node_control_structs_key_words->control_struct)->previous_stack_position; 
-            _body_position = ((Ast_Node_While*) __ast_node_control_structs_key_words->control_struct)->body_position; 
-            break;
-
-        case AST_NODE_DO_WHILE: 
-            
-            _previous_stack_position = ((Ast_Node_Do_While*) __ast_node_control_structs_key_words->control_struct)->previous_stack_position; break;
-            _body_position = ((Ast_Node_Do_While*) __ast_node_control_structs_key_words->control_struct)->body_position; 
-            break;
-
-        case AST_NODE_FOR: 
-        
-            _previous_stack_position = ((Ast_Node_For*) __ast_node_control_structs_key_words->control_struct)->previous_stack_position; break;
-            _body_position = ((Ast_Node_For*) __ast_node_control_structs_key_words->control_struct)->body_position; 
-            break;
-
-        default: break;
-        }
-
-        __convertor->current_block->block->add(
-            byte_code::Byte_Code::generate(
-                STACK_MEMORY_DEALLOCATION,
-                __convertor->current_block->current_stack_size - _previous_stack_position
-            )
-        );
-
-        switch (__ast_node_control_structs_key_words->key_word_id)
-        {
-
-            case BREAK: 
-            
-                __convertor->current_block->block->add(
-                    byte_code::Byte_Code::generate(
-                        LOAD,
-                        0
-                    )
-                );
-
-                __convertor->current_block->block->add(
-                    byte_code::Byte_Code::generate(
-                        GO_STACK_FRAME,
-                        0
-                    )
-                );
-
-                break;
-
-            case CONTINUE: 
-            
-                __convertor->current_block->block->add(
-                    byte_code::Byte_Code::generate(
-                        GO,
-                        _body_position
-                    )
-                );
-            
-                __convertor->call_byte_codes->add(
-                    __convertor->current_block->block->last->object
-                );
-            
-                break;
-        
-            default: break;
-        }
 
 }
 
 void parser::set_byte_code_of_ast_node_for(Convertor* __convertor, Ast_Node_For* __ast_node_for) {
 
-    int _body_position = 
-        __convertor->add_block();
+    // The idea to optimize space, that all code inside the loop even tho it is run in another stack block, is to be run inside the current stack size
+    // Avoiding to make the call byte code
+    // So to get the effect that is is running in another stack block 
+    // It will be created a new byte_code_block just for the conversion of the loop body and then will be copied to the current stack block
 
-    __ast_node_for->body_position = _body_position;
+    // Backup current_block
+    byte_code::Byte_Code_Block* _previous_block
+        = __convertor->current_block;
 
-    int _prev_stack_position = 
-        __convertor->current_block->current_stack_size;
+    // Temporary byte_code_block to save the byte code of loop body
+    byte_code::Byte_Code_Block* _loop_body = 
+        (byte_code::Byte_Code_Block*) malloc(sizeof(byte_code::Byte_Code_Block));
 
-    __ast_node_for->previous_stack_position = _prev_stack_position;
+    new (_loop_body) byte_code::Byte_Code_Block(); 
 
-    byte_code::Byte_Code_Block* _byte_code_block =
-        __convertor->blocks->operator[](_body_position);
+    // Makes a copy into the ast node for the control_structs_key_words
+    __ast_node_for->loop_body = 
+        _loop_body;
 
-    byte_code::Byte_Code_Block* _previous_code_block =
-        __convertor->current_block;
+    // Sets the previous current_stack value
+    _loop_body->current_stack_size = 
+        _previous_block->current_stack_size;
 
     __convertor->current_block = 
-        _byte_code_block;
+        _loop_body;
 
-    __convertor->current_block->current_stack_size = 
-        _prev_stack_position;
 
-    // //
+    // Struct of while loop:
+    //
+    //  Initialize the given instructions
+    //
+    //  Make the confirmation -- if is true jump specific amount of instructions, if dont jump any instructions
+    //      The instructions next to confirmation is the exit loop instructions 
+    //      Meaning if condition is true ( stays in the loop ) it jumps the exit instructions, if is not true dont jump the exit instructions and exit the loop
+    //      In for loop we have to deallocates all memory inialized in iniatial for   
+    //
+    //  Executes the body instructions
+    //  
+    //  Execute the "execution" instructions
+    //
+    //  At the end it returns to the begginnig of the loop after initialized variables and executes all again
 
-    // Return address 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_ALLOCATION,
-            2
-        )
-    );
-
-    __convertor->current_block->current_stack_size += 2;
-
-    for (int _ = 0; _ < __ast_node_for->variable_declarations->count; _++)
+    // Initialize all the variables
+    for ( int _ = 0; _ < __ast_node_for->variable_declarations->count; _++ )
 
         set_byte_code_of_ast(
             __convertor,
             __ast_node_for->variable_declarations->operator[](_)
         );
 
-    __ast_node_for->variable_declarations_instructions_count = 
-        __convertor->current_block->block->count;
+    // Get the current size so when the deallocation is made we dont deallocate the variables initialized
+    int _stack_size_after_variables_initialization = 
+        _loop_body->current_stack_size;
 
+    // Get the byte code length needed for the variables declarations so when loop repeats we dont initialize all the variables again
+    int _byte_code_length_after_variables_initialization = 
+        _loop_body->block->count;
 
-    // Condition
+    // Executes the condition
     bool _prev_call = __convertor->only_call; __convertor->only_call = 1;
 
     set_byte_code_of_ast(
@@ -1757,115 +1542,139 @@ void parser::set_byte_code_of_ast_node_for(Convertor* __convertor, Ast_Node_For*
 
     __convertor->only_call = _prev_call;
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            CHECK_NOT,
-            3 // Instructions count to jumps
-        )
+    // Executes the confirmation
+    __convertor->set_byte_code_check(2);
+
+    // Deallocates for inialization variables
+    __convertor->set_byte_code_stack_memory_deallocation(
+        _stack_size_after_variables_initialization - _previous_block->current_stack_size
     );
 
-    // Deallocation
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_DEALLOCATION,
-            __convertor->current_block->current_stack_size - _prev_stack_position
-        )
-    );
+    // Back up for setting go to end of loop body
+    int _size_byte_code_here = _loop_body->block->count;
 
-    // Load return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
-    );
+    // Back to add all memory deallocated cause of function above
+    _loop_body->current_stack_size += 
+        _stack_size_after_variables_initialization - _previous_block->current_stack_size;
 
-    // Goto to return address
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO_STACK_FRAME,
-            0
-        )
-    );
+    // Go byte code to end of loop body
+    __convertor->set_byte_code_jump(0);
 
+    // Beacause at this time we dont know what is the full amount of instructions
+    // Byte code to take a copy 
+    byte_code::Byte_Code* _copy_of_end_loop_body = 
+        _loop_body->block->last->object;
 
+    // Loop body
     __convertor->set_block(
         __ast_node_for->body->code
     );
 
-    // Set execution
-    for (int _ = 0; _ < __ast_node_for->execution->count; _++)
+    // Executes the "execution" instructions 
+
+    for ( int _ = 0; _ < __ast_node_for->execution->count; _++ )
 
         set_byte_code_of_ast(
             __convertor,
             __ast_node_for->execution->operator[](_)
         );
 
-    // Deallocation
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            STACK_MEMORY_DEALLOCATION,
-            __convertor->current_block->current_stack_size - _prev_stack_position - __ast_node_for->variables_declarations_size - 2
-        )
+    // End of body 
+    // Deallocates all memory used inside the body except for the variables initialized
+    // And go back to the beginnig
+
+    // Deallocates memory
+    __convertor->set_byte_code_stack_memory_deallocation(
+        _loop_body->current_stack_size - _stack_size_after_variables_initialization
     );
 
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO,
-            _body_position
-        )
-    );
- 
-    __convertor->call_byte_codes->add(
-        __convertor->current_block->block->last->object
+    // Go back to beginning after variables initialization
+    __convertor->set_byte_code_jump_inverted(
+        _loop_body->block->count - _byte_code_length_after_variables_initialization
     );
 
-    __ast_node_for->go_back = 
-        __convertor->current_block->block->last->object;
+    // Now that all body is done we can set the byte code jump argument
+    _copy_of_end_loop_body->argument =
+        _loop_body->block->count - _size_byte_code_here;
 
-    __convertor->for_control_struct_go_back->add(
-        __ast_node_for
+    // Makes a copy to the previous code block
+    _previous_block->block->join(
+        _loop_body->block
     );
-
-
 
     __convertor->current_block = 
-        _previous_code_block;
-
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            LOAD,
-            0
-        )
-    );
-
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            MEMORY_COPY_ADDRESS,
-            0
-        )
-    );
-
-    __convertor->memory_copy_stack_frame_before_go->add(
-        __convertor->current_block->block->last->object
-    );
-
-    __convertor->current_block->block->add(
-        byte_code::Byte_Code::generate(
-            GO,
-            _body_position
-        )
-    );
-
-    __convertor->call_byte_codes->add(
-        __convertor->current_block->block->last->object
-    );
-    
+        _previous_block;
 
 }
 
+void parser::set_byte_code_of_ast_node_control_structs_key_words(Convertor* __convertor, Ast_Node_Control_Structs_Key_Words* __ast_node_control_structs_key_words) {
 
+    // First we get the loop body of the control struct 
+    // Then:
+    //
+    //  For the "break" instruction:
+    //
+    //  For the "continue" instruction:
+    //
+    //
 
+    byte_code::Byte_Code_Block* _loop_body;
 
+    // Getting the loop body
+    switch (__ast_node_control_structs_key_words->control_struct->node_type)
+    {
+        // Even tho this are different structs they share the same parameters, so there is no problem in casting both into Ast_Node_While
+        case AST_NODE_WHILE: case AST_NODE_DO_WHILE:
 
+            _loop_body = 
+                ( (Ast_Node_While*) __ast_node_control_structs_key_words->control_struct )->loop_body; break;
+
+        case AST_NODE_FOR:
+
+            _loop_body = 
+            ( (Ast_Node_For*) __ast_node_control_structs_key_words->control_struct)->loop_body; break;
+
+        default: throw Ordinary_Exception_Convertor("Internal error"); break;
+    }
+
+    // instructions execution
+
+    switch (__ast_node_control_structs_key_words->key_word_id)
+    {
+        case BREAK:
+
+            break;
+        case CONTINUE:
+
+            break;
+
+        default: throw Ordinary_Exception_Convertor("Internal error"); break;
+    }
+
+}
+
+void parser::set_byte_code_of_ast_type_conversion(Convertor* __convertor, Ast_Node_Type_Conversion* __ast_node_type_conversion) {
+
+    // Here is just the type conversion 
+    // So it just s executes the value
+    // And force memory or call according to force_memory_allocation and only_call
+
+    bool _prev_force_allocation_value = __convertor->force_memory_allocation; __convertor->force_memory_allocation = 0;
+    // bool _prev_call_value = __convertor->only_call; __convertor->only_call = 1;
+
+    set_byte_code_of_ast(
+        __convertor,
+        __ast_node_type_conversion->value
+    );
+
+    __convertor->force_memory_allocation = _prev_force_allocation_value;
+    // __convertor->only_call = _prev_call_value;
+
+    if ( __convertor->force_memory_allocation )
+
+        __convertor->set_byte_code_stack_memory_allocation(
+            __ast_node_type_conversion->representive_type->get_size()
+        );
+
+}
 

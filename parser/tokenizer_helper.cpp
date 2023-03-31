@@ -49,6 +49,8 @@ int parser::get_token_symbol_id(const char*& __current_position) {
 
     if (!strncmp(__current_position, "->", 2)) { __current_position += 2; return ACCESSING_POINTER; }
 
+    if (!strncmp(__current_position, "{{", 2)) { __current_position += 2; return TYPE_CONVERSION; }
+
     if (!strncmp(__current_position, ";", 1)) { __current_position += 1; return END_INSTRUCTION; }
 
     if (!strncmp(__current_position, "(", 1)) { __current_position += 1; return OPEN_PARENTHESIS; }

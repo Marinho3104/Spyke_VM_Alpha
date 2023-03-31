@@ -134,3 +134,5 @@
 #define PRE_COMPILER_IF_N_DEF 91 // #ifndef 
 #define PRE_COMPILER_ELSE 92 // #else
 #define PRE_COMPILER_END_IF 93 // #endif
+
+#define TYPE_CONVERSION 94 // {{ /* type here */ }}

@@ -44,5 +44,9 @@
 
 #define FUNCTION_OPERATOR_EQUAL_TO_NAME "equal_to"
 #define FUNCTION_OPERATOR_NOT_EQUAL_TO_NAME "not_equal_to"
+#define FUNCTION_OPERATOR_GREATER_THAN_NAME "greater_than"
+#define FUNCTION_OPERATOR_LESS_THAN_NAME "less_than"
+#define FUNCTION_OPERATOR_GREATER_THAN_EQUAL_TO_NAME "greater_than_equal_to"
+#define FUNCTION_OPERATOR_LESS_THAN_EQUAL_TO_NAME "less_than_equal_to"
 
 

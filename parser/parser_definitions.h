@@ -52,6 +52,7 @@ namespace parser {
     struct Ast_Node_Function_Call;
     struct Ast_Node_Implicit_Value;
     struct Ast_Node_Return_Key_Word;
+    struct Ast_Node_Type_Conversion;
     struct Ast_Node_Constructor_Call;
     struct Ast_Node_Pointer_Operation;
     struct Ast_Node_Struct_Declaration;

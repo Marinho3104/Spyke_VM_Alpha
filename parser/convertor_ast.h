@@ -15,6 +15,17 @@ namespace parser {
 
     void set_byte_code_of_ast_node_struct_declaration(Convertor*, Ast_Node_Struct_Declaration*);
     
+    /* Function declaration 
+    *
+    * Struct Format:
+    *   
+    *   Return value -- stack allocation
+    *   Return instruction address -- stack allocation - 2 bytes  
+    *   Parameters -- Memory copy  
+    * 
+    *   Body <- instructions
+    *   
+    */
     void set_byte_code_of_ast_node_function_declaration(Convertor*, Ast_Node_Function_Declaration*);
 
     void set_byte_code_of_ast_node_variable_declaration(Convertor*, Ast_Node_Variable_Declaration*);
@@ -25,6 +36,15 @@ namespace parser {
 
     void set_byte_code_of_ast_node_implicit_value(Convertor*, Ast_Node_Implicit_Value*);
 
+
+    /* Function Call
+    *   
+    *   Struct Format:
+    * 
+    *       Set the return instruction address   
+    *       Load all parameters given in reverse order to atributte correctly with function declaration parameters memory copy
+    * 
+    */
     void set_byte_code_of_ast_node_function_call(Convertor*, Ast_Node_Function_Call*);
 
     void set_byte_code_of_ast_node_pointer_operations(Convertor*, Ast_Node_Pointer_Operation*);
@@ -54,6 +74,8 @@ namespace parser {
     void set_byte_code_of_ast_node_control_structs_key_words(Convertor*, Ast_Node_Control_Structs_Key_Words*);
 
     void set_byte_code_of_ast_node_for(Convertor*, Ast_Node_For*);
+
+    void set_byte_code_of_ast_type_conversion(Convertor*, Ast_Node_Type_Conversion*);
 
 }
 

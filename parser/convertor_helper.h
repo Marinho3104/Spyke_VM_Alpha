@@ -7,7 +7,6 @@
 
 namespace parser {
 
-    utils::Linked_List <byte_code::Byte_Code*>* get_byte_code_of_condition(Convertor*, Ast_Node_Variable_Declaration*);
 
 }
 

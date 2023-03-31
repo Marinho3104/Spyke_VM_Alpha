@@ -28,7 +28,7 @@ compiler::Compiler::~Compiler() {
 }
 
 compiler::Compiler::Compiler(const char* __path, int __compilation_mode) 
-    : code_information(0), pre_compiler(0), tokenizer(0) {
+    : code_information(0), pre_compiler(0), tokenizer(0), ast(0), convertor(0) {
 
         code = utils::get_file_content( (char*) __path );
 

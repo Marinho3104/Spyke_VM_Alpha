@@ -4,6 +4,7 @@
 #include "byte_code_helper.h"
 #include "linked_list.h"
 #include "ast_helper.h"
+#include "opcodes.h"
 
 #include <iostream>
 
@@ -27,11 +28,77 @@ byte_code::Byte_Code* byte_code::Byte_Code::generate(char __code, short __argume
 }
 
 
-byte_code::Byte_Code_Block::~Byte_Code_Block() { delete block; }
+byte_code::Byte_Code_Block::~Byte_Code_Block() { delete block; delete custom_sizes; delete custom_sizes_h; }
 
-byte_code::Byte_Code_Block::Byte_Code_Block(utils::Linked_List <Byte_Code*>* __block) : block(__block), current_stack_size(0), entry_point(0) {}
+byte_code::Byte_Code_Block::Byte_Code_Block(utils::Linked_List <Byte_Code*>* __block) 
+    : block(__block), custom_sizes(new utils::Linked_List <int>()), custom_sizes_h(new utils::Linked_List <int>()), current_stack_size(0), entry_point(0) {}
 
-byte_code::Byte_Code_Block::Byte_Code_Block() : current_stack_size(0), entry_point(0) { block = new utils::Linked_List <Byte_Code*>(); }
+byte_code::Byte_Code_Block::Byte_Code_Block() : current_stack_size(0), custom_sizes(new utils::Linked_List <int>()), custom_sizes_h(new utils::Linked_List <int>()), entry_point(0) { block = new utils::Linked_List <Byte_Code*>(); }
+
+byte_code::Byte_Code* byte_code::Byte_Code_Block::get_load_byte_code(short __off) {
+
+    short _fnl = current_stack_size - __off;
+
+    std::cout << "Current -> " << current_stack_size << std::endl;
+    std::cout << "Off -> " << __off << std::endl;
+    std::cout << "Fnl -> " << _fnl << std::endl;
+
+    for (int _ = 0; _ < custom_sizes->count; _++)
+
+        if ( custom_sizes->operator[](_) > _fnl ) {
+
+            block->add(
+                get_load_byte_code(
+                    current_stack_size - custom_sizes->operator[](_)
+                )
+            );
+
+            block->add(
+                byte_code::Byte_Code::generate(
+                    HELPER,
+                    LOAD_STACK_FRAME_MODE_ADD
+                )
+            );
+
+            block->add(
+                byte_code::Byte_Code::generate(
+                    HELPER,
+                    custom_sizes_h->operator[](_)
+                )
+            );
+
+        }
+
+
+    return 
+        byte_code::Byte_Code::generate(
+            LOAD,
+            __off
+        );
+
+
+}
+
+byte_code::Byte_Code* byte_code::Byte_Code_Block::get_load_global_byte_code(short __off, byte_code::Byte_Code_Block* __global_block) {
+
+    for (int _ = 0; _ < __global_block->custom_sizes->count; _++)
+
+        if ( __global_block->custom_sizes->operator[](_) < __off ) {
+
+            std::cout << "Not Done Global" << std::endl;
+            exit(1);
+
+        }
+
+
+    return 
+        byte_code::Byte_Code::generate(
+            LOAD_GLOBAL,
+            __off
+        );    
+
+}
+
 
 
 byte_code::Compiled_Byte_Code::~Compiled_Byte_Code() { free(implicit_values); }

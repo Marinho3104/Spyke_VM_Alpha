@@ -81,6 +81,10 @@ namespace parser {
 
         bool is_pointer_equal(Type_Information*);
 
+        bool is_spyke_type();
+
+        bool is_void_type();
+
         Type_Information* get_copy();
 
         int get_size();
@@ -120,6 +124,8 @@ namespace parser {
     bool is_control_struct(int);
 
     int get_implicit_value_type_size(Token*);
+
+    Ast_Node* get_value(Ast*);
 
 }
 

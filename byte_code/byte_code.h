@@ -27,11 +27,18 @@ namespace byte_code {
 
         utils::Linked_List <Byte_Code*>* block;
 
+        utils::Linked_List <int>* custom_sizes, *custom_sizes_h;
+
         int current_stack_size;
 
         bool entry_point;
 
         ~Byte_Code_Block(); Byte_Code_Block(utils::Linked_List <Byte_Code*>*); Byte_Code_Block();
+
+
+        byte_code::Byte_Code* get_load_byte_code(short);
+
+        static byte_code::Byte_Code* get_load_global_byte_code(short, byte_code::Byte_Code_Block*);
 
 
     };

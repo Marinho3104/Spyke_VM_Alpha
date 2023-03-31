@@ -1,0 +1,11 @@
+
+        int m;
+
+        int mk[5];
+
+        *mk = 127;
+
+        int mm = mk[1];
+
+        exec 4, 4;
+
